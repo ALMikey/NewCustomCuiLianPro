@@ -9,13 +9,15 @@ import java.io.UnsupportedEncodingException;
 import java.util.logging.Logger;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import org.openjdk.nashorn.api.scripting.*;
+import jdk.nashorn.api.scripting.*;
 import lvhaoxuan.custom.cuilian.NewCustomCuiLianPro;
 import lvhaoxuan.custom.cuilian.NewCustomCuiLianPro.ItemType;
 import lvhaoxuan.custom.cuilian.movelevel.MoveLevelHandle;
 import lvhaoxuan.custom.cuilian.object.Level;
 import lvhaoxuan.custom.cuilian.object.Stone;
 import lvhaoxuan.custom.cuilian.object.SuitEffect;
+import lvhaoxuan.custom.cuilian.object.BuiltinAttribute;
+import lvhaoxuan.custom.cuilian.object.BuiltinAttribute.AttributeType;
 import lvhaoxuan.llib.util.FileUtil;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -147,5 +149,49 @@ public class Loader {
             return engine;
         }
         return null;
+    }
+
+    public static void loadAttributes() {
+        BuiltinAttribute.attributes.clear();
+        NewCustomCuiLianPro.builtinAttributeEnable = false;
+        NewCustomCuiLianPro.builtinAttributeDebug = false;
+        if (!NewCustomCuiLianPro.ins.getDataFolder().exists()) {
+            NewCustomCuiLianPro.ins.getDataFolder().mkdir();
+        }
+        File file = new File(NewCustomCuiLianPro.ins.getDataFolder(), "attribute.yml");
+        if (!file.exists()) {
+            NewCustomCuiLianPro.ins.saveResource("attribute.yml", true);
+        }
+        try {
+            InputStreamReader reader = new InputStreamReader(new FileInputStream(file), "UTF-8");
+            YamlConfiguration config = YamlConfiguration.loadConfiguration(reader);
+            NewCustomCuiLianPro.builtinAttributeEnable = config.getBoolean("enabled", false);
+            NewCustomCuiLianPro.builtinAttributeDebug = config.getBoolean("debug", false);
+            if (NewCustomCuiLianPro.builtinAttributeEnable) {
+                NewCustomCuiLianPro.ins.getServer().getConsoleSender().sendMessage("§7[§e" + NewCustomCuiLianPro.ins.getName() + "§7]§a内置属性模块已加载");
+                org.bukkit.configuration.ConfigurationSection cs = config.getConfigurationSection("attributes");
+                if (cs != null) {
+                    for (String key : cs.getKeys(false)) {
+                        String keyword = config.getString("attributes." + key + ".keyword");
+                        String typeStr = config.getString("attributes." + key + ".type");
+                        if (keyword != null && !keyword.trim().isEmpty() && typeStr != null) {
+                            try {
+                                AttributeType type = AttributeType.valueOf(typeStr.toUpperCase());
+                                BuiltinAttribute attribute = new BuiltinAttribute(keyword, type);
+                                BuiltinAttribute.attributes.add(attribute);
+                                if (NewCustomCuiLianPro.builtinAttributeDebug) {
+                                    NewCustomCuiLianPro.ins.getLogger().info("[AttrDebug] loaded keyword="
+                                            + attribute.keyword + " type=" + attribute.type);
+                                }
+                            } catch (IllegalArgumentException ex) {
+                                NewCustomCuiLianPro.ins.getLogger().warning("attribute.yml 中属性 " + key
+                                        + " 的 type 无效: " + typeStr + "，可用值为 ATTACK 或 DEFENSE");
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (FileNotFoundException | UnsupportedEncodingException ex) {
+        }
     }
 }

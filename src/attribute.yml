@@ -1,0 +1,14 @@
+# 内置属性系统配置
+# enabled: true 开启 / false 关闭
+enabled: true
+# debug: true 时，每次命中会在控制台输出属性结算信息；正式服建议保持 false。
+debug: false
+# keyword 为 lore 中数值前的完整文本。颜色代码会被自动忽略。
+# 支持整数和小数，例如 "物理攻击: 10"、"物理攻击: 10.5"。
+attributes:
+  物理攻击:
+    keyword: "物理攻击:"
+    type: ATTACK
+  物理防御:
+    keyword: "物理防御:"
+    type: DEFENSE

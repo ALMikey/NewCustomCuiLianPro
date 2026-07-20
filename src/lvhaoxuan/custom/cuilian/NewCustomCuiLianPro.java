@@ -7,6 +7,7 @@ import lvhaoxuan.custom.cuilian.commander.Commander;
 import lvhaoxuan.custom.cuilian.message.Message;
 import lvhaoxuan.custom.cuilian.listener.FurnaceListener;
 import lvhaoxuan.custom.cuilian.listener.ProtectRuneListener;
+import lvhaoxuan.custom.cuilian.listener.AttributeListener;
 import lvhaoxuan.custom.cuilian.loader.Loader;
 import lvhaoxuan.custom.cuilian.metrics.Metrics;
 import lvhaoxuan.custom.cuilian.movelevel.MoveLevelHandle;
@@ -34,6 +35,8 @@ public class NewCustomCuiLianPro extends JavaPlugin {
     public static boolean apEnable = false;
     public static boolean sxv2Enable = false;
     public static boolean sxv3Enable = false;
+    public static boolean builtinAttributeEnable = false;
+    public static boolean builtinAttributeDebug = false;
 
     @Override
     public void onEnable() {
@@ -57,6 +60,7 @@ public class NewCustomCuiLianPro extends JavaPlugin {
         this.getServer().getPluginCommand("cuilian").setExecutor(new Commander());
         this.getServer().getPluginManager().registerEvents(new FurnaceListener(), this);
         this.getServer().getPluginManager().registerEvents(new ProtectRuneListener(), this);
+        this.getServer().getPluginManager().registerEvents(new AttributeListener(), this);
         setRecipe();
         Bukkit.getScheduler().runTaskTimerAsynchronously(NewCustomCuiLianPro.ins, new ScriptRunnable(), 0, 2);
         Bukkit.getScheduler().runTaskTimerAsynchronously(NewCustomCuiLianPro.ins, new SyncEffectRunnable(), 0, 10);
@@ -69,6 +73,7 @@ public class NewCustomCuiLianPro extends JavaPlugin {
         Loader.loadLevels();
         Loader.loadStones();
         MoveLevelHandle.init();
+        Loader.loadAttributes();
     }
 
     public static void setRecipe() {

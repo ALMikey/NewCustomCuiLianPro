@@ -1,0 +1,10 @@
+# 内置属性系统配置
+# enabled: true 开启 / false 关闭
+enabled: true
+attributes:
+  物理攻击:
+    keyword: "物理攻击"
+    type: ATTACK
+  物理防御:
+    keyword: "物理防御"
+    type: DEFENSE
