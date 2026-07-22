@@ -33,14 +33,18 @@ public class CuiLianAPI {
     }
 
     public static boolean canCuiLian(ItemStack item) {
+        return getItemType(item) != null;
+    }
+
+    public static NewCustomCuiLianPro.ItemType getItemType(ItemStack item) {
         if (LLibAPI.checkItemNull(item)) {
             for (NewCustomCuiLianPro.ItemType type : NewCustomCuiLianPro.types) {
-                if (type.type == item.getType()) {
-                    return true;
+                if (type.matches(item)) {
+                    return type;
                 }
             }
         }
-        return false;
+        return null;
     }
 
     public static ItemStack cuilian(Stone stone, ItemStack item, Player p) {
@@ -88,7 +92,8 @@ public class CuiLianAPI {
     }
 
     public static ItemStack setItemLevel(ItemStack item, Level level) {
-        if (canCuiLian(item)) {
+        NewCustomCuiLianPro.ItemType itemType = getItemType(item);
+        if (itemType != null) {
             int basicLevel = (level != null ? level.value : 0);
             ItemMeta meta = item.getItemMeta();
             setDisplayName(item.getType(), meta, basicLevel);
@@ -103,8 +108,11 @@ public class CuiLianAPI {
                 for (String line : level.lore) {
                     lore.add(NewCustomCuiLianPro.LEVEL_JUDGE + line);
                 }
-                for (String line : level.attribute.get(NewCustomCuiLianPro.typesInBag.get(item.getType()))) {
-                    lore.add(NewCustomCuiLianPro.LEVEL_JUDGE + line);
+                List<String> attributes = level.attribute.get(itemType.typeInBag);
+                if (attributes != null) {
+                    for (String line : attributes) {
+                        lore.add(NewCustomCuiLianPro.LEVEL_JUDGE + line);
+                    }
                 }
             }
             Level protectRuneLevel = Level.byProtectRune(item);
@@ -119,16 +127,20 @@ public class CuiLianAPI {
 
     public static void setDisplayName(Material type, ItemMeta meta, int basicLevel) {
         if (NewCustomCuiLianPro.displayNameFormat == 1) {
-            String displayName = meta.hasDisplayName() ? meta.getDisplayName() : chineseDisplayName(type);
+            String displayName = meta.hasDisplayName() ? meta.getDisplayName() : defaultDisplayName(type);
             displayName = displayName.replaceAll("\\+[0-9]* ", "");
             displayName = "§f+" + basicLevel + " " + displayName;
             meta.setDisplayName(displayName);
         } else if (NewCustomCuiLianPro.displayNameFormat == 2) {
-            String displayName = meta.hasDisplayName() ? meta.getDisplayName() : chineseDisplayName(type);
+            String displayName = meta.hasDisplayName() ? meta.getDisplayName() : defaultDisplayName(type);
             displayName = displayName.replaceAll(" \\+[0-9]*", "");
             displayName = displayName + " +" + basicLevel;
             meta.setDisplayName(displayName);
         }
+    }
+
+    private static String defaultDisplayName(Material type) {
+        return type == null ? "§f物品" : chineseDisplayName(type);
     }
 
     public static ItemStack addProtectRune(ItemStack item, ProtectRune protectRune) {
@@ -146,10 +158,12 @@ public class CuiLianAPI {
     }
 
     public static List<String> cleanLevel(List<String> lore) {
+        String levelJudge = NewCustomCuiLianPro.LEVEL_JUDGE;
+        boolean hasLevelJudge = levelJudge != null && !levelJudge.isEmpty();
         Iterator<String> iterator = lore.iterator();
         while (iterator.hasNext()) {
             String line = iterator.next();
-            if (line.contains(NewCustomCuiLianPro.LEVEL_JUDGE) || line.equals(Message.UNDER_LINE)) {
+            if ((hasLevelJudge && line.contains(levelJudge)) || line.equals(Message.UNDER_LINE)) {
                 iterator.remove();
             }
         }
@@ -157,10 +171,14 @@ public class CuiLianAPI {
     }
 
     public static List<String> cleanProtectRune(List<String> lore) {
+        String protectRuneJudge = NewCustomCuiLianPro.PROTECT_RUNE_JUDGE;
+        if (protectRuneJudge == null || protectRuneJudge.isEmpty()) {
+            return lore;
+        }
         Iterator<String> iterator = lore.iterator();
         while (iterator.hasNext()) {
             String line = iterator.next();
-            if (line.contains(NewCustomCuiLianPro.PROTECT_RUNE_JUDGE)) {
+            if (line.contains(protectRuneJudge)) {
                 iterator.remove();
             }
         }

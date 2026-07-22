@@ -1,7 +1,8 @@
 name: NewCustomCuiLianPro
 main: lvhaoxuan.custom.cuilian.NewCustomCuiLianPro
-version: 4.3.2
+version: 4.4.7
 author: lvhaoxuan
+depend: [LLib]
 softdepend: [AttributePlus, SX-Attribute]
 commands:
     cuilian:

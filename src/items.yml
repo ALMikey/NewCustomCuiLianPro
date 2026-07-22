@@ -1,32 +1,379 @@
+# 可淬炼物品配置。
+# Nevermine (AoA) ID 由当前服务器 Forge 注册表导出；更换或增删 Mod 后请重新导出并核对。
+# Mod 物品使用原始 ID；需要限制元数据时可写为 "ID:元数据"。
 Hand:
+    # 原版武器
     - GOLD_SWORD
     - IRON_SWORD
     - WOOD_SWORD
     - STONE_SWORD
     - BOW
     - DIAMOND_SWORD
+    # Nevermine 剑系武器
+    - "4679" # nevermine:AmethystSword
+    - "4680" # nevermine:Bloodfury
+    - "4681" # nevermine:BloodstoneSword
+    - "4682" # nevermine:CoralStoneSword
+    - "4683" # nevermine:CrystalliteSword
+    - "4684" # nevermine:EmberstoneSword
+    - "4685" # nevermine:GuardiansSword
+    - "4686" # nevermine:HorizonMaul
+    - "4687" # nevermine:FireborneSword
+    - "4688" # nevermine:IllusionSword
+    - "4689" # nevermine:JadeSword
+    - "4690" # nevermine:LegboneSword
+    - "4691" # nevermine:LimoniteSword
+    - "4692" # nevermine:NethengeicSword
+    - "4693" # nevermine:RockBasherSword
+    - "4694" # nevermine:RockPickSword
+    - "4695" # nevermine:SapphireSword
+    - "4696" # nevermine:RositeSword
+    - "4697" # nevermine:ShadowSword
+    - "4698" # nevermine:SkeletalSword
+    - "4699" # nevermine:TrollBasherAxe
+    - "5150" # nevermine:ShroomusSword
+    - "5151" # nevermine:HarvesterSword
+    - "5152" # nevermine:RunicSword
+    - "5153" # nevermine:BaronSword
+    - "5154" # nevermine:ExplochronSword
+    - "5155" # nevermine:CoralstormSword
+    - "5156" # nevermine:RosidianSword
+    - "5173" # nevermine:CoralGreatblade
+    - "5174" # nevermine:BaronGreatblade
+    - "5175" # nevermine:LunarGreatblade
+    - "5176" # nevermine:HauntedGreatblade
+    - "5177" # nevermine:LyonicGreatblade
+    - "5178" # nevermine:NoxiousGreatblade
+    - "5179" # nevermine:PrimordialGreatblade
+    - "5180" # nevermine:RosidianGreatblade
+    - "5181" # nevermine:RunicGreatblade
+    - "5182" # nevermine:SubterraneanGreatblade
+    - "5183" # nevermine:TidalGreatblade
+    - "5184" # nevermine:UnderworldGreatblade
+    - "5377" # nevermine:LelyetianGreatblade
+    - "5378" # nevermine:RoyalGreatblade
+    - "5488" # nevermine:GoofyGreatblade
+    - "5521" # nevermine:Ultraflame
+    - "5522" # nevermine:VoidSword
+    - "5524" # nevermine:Grandsword
+    - "5526" # nevermine:CrystalGreatblade
+    - "5528" # nevermine:CrystalMaul
+    - "5559" # nevermine:ShroomicGreatblade
+    - "5588" # nevermine:CaramelCarver
+    - "5589" # nevermine:SweetSword
+    - "5590" # nevermine:CandyBlade
+    - "5591" # nevermine:CottonCrusher
+    - "5694" # nevermine:CreepoidGreatblade
+    - "5695" # nevermine:MilleniumGreatblade
+    - "5717" # nevermine:CreepifiedSword
+    - "5718" # nevermine:VulcammerSword
+    - "5800" # nevermine:HolySword
+    - "5801" # nevermine:CandlefireSword
+    - "5802" # nevermine:SupremecySword
+    - "5803" # nevermine:TerrestrialSword
+    - "5804" # nevermine:DivinitySword
+    - "5805" # nevermine:DiamondheadSword
+    - "5806" # nevermine:SlowstoneSword
+    - "5807" # nevermine:WitherstoneSword
+    - "5808" # nevermine:WitherstoneGreatblade
+    - "5809" # nevermine:SlowstoneGreatblade
+    - "5810" # nevermine:Burnblade
+    - "5811" # nevermine:TerrestrialGreatblade
+    - "5823" # nevermine:KnightsGuard
+    - "5833" # nevermine:LightsWay
+    - "5834" # nevermine:ShyreSword
+    - "5835" # nevermine:GodsGreatblade
+    # Nevermine 镰刀
+    - "5379" # nevermine:ErebonScythe
+    - "5380" # nevermine:SelyanScythe
+    - "5381" # nevermine:PlutonScythe
+    - "5382" # nevermine:LuxonScythe
 Helmet:
+    # 原版头盔
     - CHAINMAIL_HELMET
     - GOLD_HELMET
     - IRON_HELMET
     - DIAMOND_HELMET
-Chestplate:   
+    # Nevermine 头部防具
+    - "4891" # VoidHelmet
+    - "4895" # IceHelmet
+    - "4899" # PoisonHelmet
+    - "4903" # WitherHelmet
+    - "4907" # ExplosiveHelmet
+    - "4911" # SpeedHelmet
+    - "4915" # AlacrityHelmet
+    - "4919" # WeakenHelmet
+    - "4923" # InfernalHelmet
+    - "4927" # CommanderHelmet
+    - "4931" # SkeletalHelmet
+    - "4935" # UtopianHelmet
+    - "4939" # NecroHelmet
+    - "4943" # NethengeicHelmet
+    - "4947" # BiogenicHelmet
+    - "4951" # RunicHelmet
+    - "4955" # PhantasmHelmet
+    - "4959" # NightmareHelmet
+    - "4963" # SealordHelmet
+    - "4964" # AchelosHelmet
+    - "4965" # OceanusHelmet
+    - "4966" # PrimordialHelmet
+    - "4970" # RosidianHelmet
+    - "4974" # LyonicHelmet
+    - "4978" # GhoulishHelmet
+    - "4982" # SubterraneanHelmet
+    - "4986" # LunarHelmet
+    - "4990" # BoreicHelmet
+    - "4994" # PurityHelmet
+    - "4998" # BaronHelmet
+    - "5002" # GhastlyHelmet
+    - "5006" # PredatiousHelmet
+    - "5010" # HydrangicHelmet
+    - "5021" # HazmatHelmet
+    - "5299" # HydroplateHelmet
+    - "5305" # ElecanyteHelmet
+    - "5309" # SharpshotHelmet
+    - "5313" # RockboneHelmet
+    - "5349" # AuguryHelmet
+    - "5353" # CreationHelmet
+    - "5357" # HunterHelmet
+    - "5361" # InfusionHelmet
+    - "5365" # ForagingHelmet
+    - "5369" # ExoplateHelmet
+    - "5373" # ThermalHelmet
+    - "5374" # FaceMask
+    - "5375" # NightVisionGoggles
+    - "5452" # RunationHelmet
+    - "5500" # InnervationHelmet
+    - "5504" # VitalityHelmet
+    - "5508" # AnimaHelmet
+    - "5552" # CrystallisHelmet
+    - "5592" # FungalHelmet
+    - "5596" # CandyHelmet
+    - "5600" # ExpeditionHelmet
+    - "5647" # LoggingHelmet
+    - "5651" # HermetismHelmet
+    - "5655" # VulcanismHelmet
+    - "5659" # ButcheryHelmet
+    - "5663" # ZargoniteHelmet
+    - "5667" # SpaceKingHelmet
+    - "5671" # ArchaicHelmet
+    - "5675" # OmniHelmet
+    - "5679" # MercurialHelmet
+    - "5759" # LyndamyteHelmet
+    - "5763" # EmbrodiumHelmet
+    - "5767" # AmethindHelmet
+    - "5771" # HaulingHelmet
+    - "5819" # KnightHelmet
+Chestplate:
+    # 原版胸甲
     - CHAINMAIL_CHESTPLATE
     - GOLD_CHESTPLATE
     - IRON_CHESTPLATE
     - DIAMOND_CHESTPLATE
+    # Nevermine 胸甲
+    - "4892" # VoidChestplate
+    - "4896" # IceChestplate
+    - "4900" # PoisonChestplate
+    - "4904" # WitherChestplate
+    - "4908" # ExplosiveChestplate
+    - "4912" # SpeedChestplate
+    - "4916" # AlacrityChestplate
+    - "4920" # WeakenChestplate
+    - "4924" # InfernalChestplate
+    - "4928" # CommanderChestplate
+    - "4932" # SkeletalChestplate
+    - "4936" # UtopianChestplate
+    - "4940" # NecroChestplate
+    - "4944" # NethengeicChestplate
+    - "4948" # BiogenicChestplate
+    - "4952" # RunicChestplate
+    - "4956" # PhantasmChestplate
+    - "4960" # NightmareChestplate
+    - "4967" # PrimordialChestplate
+    - "4971" # RosidianChestplate
+    - "4975" # LyonicChestplate
+    - "4979" # GhoulishChestplate
+    - "4983" # SubterraneanChestplate
+    - "4987" # LunarChestplate
+    - "4991" # BoreicChestplate
+    - "4995" # PurityChestplate
+    - "4999" # BaronChestplate
+    - "5003" # GhastlyChestplate
+    - "5007" # PredatiousChestplate
+    - "5011" # HydrangicChestplate
+    - "5022" # HazmatChestplate
+    - "5297" # HydroplateChestplate
+    - "5303" # ElecanyteChestplate
+    - "5307" # SharpshotChestplate
+    - "5311" # RockboneChestplate
+    - "5347" # AuguryChestplate
+    - "5351" # CreationChestplate
+    - "5355" # HunterChestplate
+    - "5359" # InfusionChestplate
+    - "5363" # ForagingChestplate
+    - "5367" # ExoplateChestplate
+    - "5371" # ThermalChestplate
+    - "5450" # RunationChestplate
+    - "5501" # InnervationChestplate
+    - "5505" # VitalityChestplate
+    - "5509" # AnimaChestplate
+    - "5553" # CrystallisChestplate
+    - "5593" # FungalChestplate
+    - "5597" # CandyChestplate
+    - "5601" # ExpeditionChestplate
+    - "5648" # LoggingChestplate
+    - "5652" # HermetismChestplate
+    - "5656" # VulcanismChestplate
+    - "5660" # ButcheryChestplate
+    - "5664" # ZargoniteChestplate
+    - "5668" # SpaceKingChestplate
+    - "5672" # ArchaicChestplate
+    - "5676" # OmniChestplate
+    - "5680" # MercurialChestplate
+    - "5760" # LyndamyteChestplate
+    - "5764" # EmbrodiumChestplate
+    - "5768" # AmethindChestplate
+    - "5772" # HaulingChestplate
+    - "5820" # KnightChestplate
 Leggings:
+    # 原版护腿
     - CHAINMAIL_LEGGINGS
     - GOLD_LEGGINGS
     - IRON_LEGGINGS
     - DIAMOND_LEGGINGS
+    # Nevermine 护腿
+    - "4893" # VoidLeggings
+    - "4897" # IceLeggings
+    - "4901" # PoisonLeggings
+    - "4905" # WitherLeggings
+    - "4909" # ExplosiveLeggings
+    - "4913" # SpeedLeggings
+    - "4917" # AlacrityLeggings
+    - "4921" # WeakenLeggings
+    - "4925" # InfernalLeggings
+    - "4929" # CommanderLeggings
+    - "4933" # SkeletalLeggings
+    - "4937" # UtopianLeggings
+    - "4941" # NecroLeggings
+    - "4945" # NethengeicLeggings
+    - "4949" # BiogenicLeggings
+    - "4953" # RunicLeggings
+    - "4957" # PhantasmLeggings
+    - "4961" # NightmareLeggings
+    - "4968" # PrimordialLeggings
+    - "4972" # RosidianLeggings
+    - "4976" # LyonicLeggings
+    - "4980" # GhoulishLeggings
+    - "4984" # SubterraneanLeggings
+    - "4988" # LunarLeggings
+    - "4992" # BoreicLeggings
+    - "4996" # PurityLeggings
+    - "5000" # BaronLeggings
+    - "5004" # GhastlyLeggings
+    - "5008" # PredatiousLeggings
+    - "5012" # HydrangicLeggings
+    - "5023" # HazmatLeggings
+    - "5298" # HydroplateLeggings
+    - "5304" # ElecanyteLeggings
+    - "5308" # SharpshotLeggings
+    - "5312" # RockboneLeggings
+    - "5348" # AuguryLeggings
+    - "5352" # CreationLeggings
+    - "5356" # HunterLeggings
+    - "5360" # InfusionLeggings
+    - "5364" # ForagingLeggings
+    - "5368" # ExoplateLeggings
+    - "5372" # ThermalLeggings
+    - "5451" # RunationLeggings
+    - "5502" # InnervationLeggings
+    - "5506" # VitalityLeggings
+    - "5510" # AnimaLeggings
+    - "5554" # CrystallisLeggings
+    - "5594" # FungalLeggings
+    - "5598" # CandyLeggings
+    - "5602" # ExpeditionLeggings
+    - "5649" # LoggingLeggings
+    - "5653" # HermetismLeggings
+    - "5657" # VulcanismLeggings
+    - "5661" # ButcheryLeggings
+    - "5665" # ZargoniteLeggings
+    - "5669" # SpaceKingLeggings
+    - "5673" # ArchaicLeggings
+    - "5677" # OmniLeggings
+    - "5681" # MercurialLeggings
+    - "5761" # LyndamyteLeggings
+    - "5765" # EmbrodiumLeggings
+    - "5769" # AmethindLeggings
+    - "5773" # HaulingLeggings
+    - "5821" # KnightLeggings
 Boots:
+    # 原版靴子
     - CHAINMAIL_BOOTS
     - GOLD_BOOTS
     - IRON_BOOTS
     - DIAMOND_BOOTS
-#可用的格式:
-#BOW:10
-#276:10
-#BOW
-#276
+    # Nevermine 靴子
+    - "4894" # VoidBoots
+    - "4898" # IceBoots
+    - "4902" # PoisonBoots
+    - "4906" # WitherBoots
+    - "4910" # ExplosiveBoots
+    - "4914" # SpeedBoots
+    - "4918" # AlacrityBoots
+    - "4922" # WeakenBoots
+    - "4926" # InfernalBoots
+    - "4930" # CommanderBoots
+    - "4934" # SkeletalBoots
+    - "4938" # UtopianBoots
+    - "4942" # NecroBoots
+    - "4946" # NethengeicBoots
+    - "4950" # BiogenicBoots
+    - "4954" # RunicBoots
+    - "4958" # PhantasmBoots
+    - "4962" # NightmareBoots
+    - "4969" # PrimordialBoots
+    - "4973" # RosidianBoots
+    - "4977" # LyonicBoots
+    - "4981" # GhoulishBoots
+    - "4985" # SubterraneanBoots
+    - "4989" # LunarBoots
+    - "4993" # BoreicBoots
+    - "4997" # PurityBoots
+    - "5001" # BaronBoots
+    - "5005" # GhastlyBoots
+    - "5009" # PredatiousBoots
+    - "5013" # HydrangicBoots
+    - "5024" # HazmatBoots
+    - "5296" # HydroplateBoots
+    - "5302" # ElecanyteBoots
+    - "5306" # SharpshotBoots
+    - "5310" # RockboneBoots
+    - "5346" # AuguryBoots
+    - "5350" # CreationBoots
+    - "5354" # HunterBoots
+    - "5358" # InfusionBoots
+    - "5362" # ForagingBoots
+    - "5366" # ExoplateBoots
+    - "5370" # ThermalBoots
+    - "5449" # RunationBoots
+    - "5503" # InnervationBoots
+    - "5507" # VitalityBoots
+    - "5511" # AnimaBoots
+    - "5555" # CrystallisBoots
+    - "5595" # FungalBoots
+    - "5599" # CandyBoots
+    - "5603" # ExpeditionBoots
+    - "5650" # LoggingBoots
+    - "5654" # HermetismBoots
+    - "5658" # VulcanismBoots
+    - "5662" # ButcheryBoots
+    - "5666" # ZargoniteBoots
+    - "5670" # SpaceKingBoots
+    - "5674" # ArchaicBoots
+    - "5678" # OmniBoots
+    - "5682" # MercurialBoots
+    - "5762" # LyndamyteBoots
+    - "5766" # EmbrodiumBoots
+    - "5770" # AmethindBoots
+    - "5774" # HaulingBoots
+    - "5822" # KnightBoots

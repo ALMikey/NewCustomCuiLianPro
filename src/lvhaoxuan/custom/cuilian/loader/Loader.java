@@ -79,7 +79,9 @@ public class Loader {
                 for (String strType : config.getStringList(key)) {
                     ItemType type = new ItemType(key, strType);
                     NewCustomCuiLianPro.types.add(type);
-                    NewCustomCuiLianPro.typesInBag.put(type.type, type.typeInBag);
+                    if (type.type != null) {
+                        NewCustomCuiLianPro.typesInBag.put(type.type, type.typeInBag);
+                    }
                 }
             }
         } catch (FileNotFoundException | UnsupportedEncodingException ex) {
@@ -98,8 +100,8 @@ public class Loader {
             InputStreamReader reader = new InputStreamReader(new FileInputStream(file), "UTF-8");
             YamlConfiguration config = YamlConfiguration.loadConfiguration(reader);
             NewCustomCuiLianPro.otherEntitySuitEffect = config.getBoolean("OtherEntitySuitEffect");
-            NewCustomCuiLianPro.PROTECT_RUNE_JUDGE = config.getString("PROTECT_RUNE_JUDGE");
-            NewCustomCuiLianPro.LEVEL_JUDGE = config.getString("LEVEL_JUDGE");
+            NewCustomCuiLianPro.PROTECT_RUNE_JUDGE = getNonEmptyString(config, "PROTECT_RUNE_JUDGE", "§a§l保护符: ");
+            NewCustomCuiLianPro.LEVEL_JUDGE = getNonEmptyString(config, "LEVEL_JUDGE", "§e§l淬炼属性: ");
             MoveLevelHandle.moveLevelInvTitle = config.getString("MoveLevelInvTitle");
             NewCustomCuiLianPro.judgeOffHand = config.getBoolean("JudgeOffHand");
             NewCustomCuiLianPro.displayNameFormat = config.getInt("DisplayNameFormat");
@@ -193,5 +195,15 @@ public class Loader {
             }
         } catch (FileNotFoundException | UnsupportedEncodingException ex) {
         }
+    }
+
+    private static String getNonEmptyString(YamlConfiguration config, String path, String defaultValue) {
+        String value = config.getString(path);
+        if (value == null || value.isEmpty()) {
+            NewCustomCuiLianPro.ins.getLogger().warning("config.yml 的 " + path
+                    + " 不能为空，已使用默认识别前缀以保护物品 Lore。");
+            return defaultValue;
+        }
+        return value;
     }
 }

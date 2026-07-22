@@ -13,6 +13,7 @@ import lvhaoxuan.custom.cuilian.metrics.Metrics;
 import lvhaoxuan.custom.cuilian.movelevel.MoveLevelHandle;
 import lvhaoxuan.custom.cuilian.runnable.ScriptRunnable;
 import lvhaoxuan.custom.cuilian.runnable.SyncEffectRunnable;
+import lvhaoxuan.custom.cuilian.util.NevermineItemExporter;
 import lvhaoxuan.llib.util.MathUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -62,6 +63,12 @@ public class NewCustomCuiLianPro extends JavaPlugin {
         this.getServer().getPluginManager().registerEvents(new ProtectRuneListener(), this);
         this.getServer().getPluginManager().registerEvents(new AttributeListener(), this);
         setRecipe();
+        Bukkit.getScheduler().runTask(this, new Runnable() {
+            @Override
+            public void run() {
+                NevermineItemExporter.export();
+            }
+        });
         Bukkit.getScheduler().runTaskTimerAsynchronously(NewCustomCuiLianPro.ins, new ScriptRunnable(), 0, 2);
         Bukkit.getScheduler().runTaskTimerAsynchronously(NewCustomCuiLianPro.ins, new SyncEffectRunnable(), 0, 10);
     }
@@ -78,8 +85,13 @@ public class NewCustomCuiLianPro extends JavaPlugin {
 
     public static void setRecipe() {
         for (ItemType type : types) {
+            if (!type.canUseBukkitRecipe()) {
+                continue;
+            }
             FurnaceRecipe recipe = new FurnaceRecipe(type.toItemStack(), type.mData);
-            for (int durability = 0; durability <= type.type.getMaxDurability(); durability++) {
+            int minDurability = type.hasData ? type.data : 0;
+            int maxDurability = type.hasData ? type.data : type.type.getMaxDurability();
+            for (int durability = minDurability; durability <= maxDurability; durability++) {
                 recipe.setInput(type.type, durability);
                 try {
                     ins.getServer().addRecipe(recipe);
@@ -95,25 +107,47 @@ public class NewCustomCuiLianPro extends JavaPlugin {
         public String baseType;
         public Material type;
         public MaterialData mData;
+        public int itemId;
+        public short data;
+        public boolean hasData;
 
         public ItemType(String typeInBag, String baseType) {
             this.typeInBag = typeInBag;
             this.baseType = baseType;
-            if (baseType.contains(":")) {
-                String[] args = baseType.split(":");
-                String strType = args[0];
-                String strData = args[1];
-                type = MathUtil.isNumeric(strType) ? Material.getMaterial(Integer.parseInt(strType)) : Material.getMaterial(strType);
-                int data = Integer.parseInt(strData);
-                mData = new MaterialData(type, (byte) data);
+            String[] args = baseType.split(":", 2);
+            if (MathUtil.isNumeric(args[0])) {
+                itemId = Integer.parseInt(args[0]);
+                hasData = args.length == 2;
+                data = hasData ? Short.parseShort(args[1]) : 0;
+                type = Material.getMaterial(itemId);
             } else {
-                type = MathUtil.isNumeric(baseType) ? Material.getMaterial(baseType) : Material.getMaterial(baseType);
-                mData = new MaterialData(type);
+                type = Material.getMaterial(baseType);
+                if (type == null) {
+                    throw new IllegalArgumentException("未知物品类型: " + baseType);
+                }
+                itemId = type.getId();
+                hasData = false;
+                data = 0;
+            }
+            if (type != null) {
+                mData = new MaterialData(type, (byte) data);
             }
         }
 
         public ItemStack toItemStack() {
             return mData.toItemStack(1);
+        }
+
+        public boolean matches(ItemStack item) {
+            return item != null && item.getTypeId() == itemId
+                    // Forge tool damage shares Bukkit's durability field. For raw Mod IDs,
+                    // treating an optional :Data suffix as a strict metadata value would make
+                    // a worn tool disappear from the configured item list.
+                    && (!hasData || type == null || item.getDurability() == data);
+        }
+
+        public boolean canUseBukkitRecipe() {
+            return type != null && mData != null;
         }
     }
 }
