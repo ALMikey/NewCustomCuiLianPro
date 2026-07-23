@@ -4,6 +4,8 @@ PROTECT_RUNE_JUDGE: "§a§l保护符: "
 #保护符lore行识别符号，不冲突的情况下勿乱改
 LEVEL_JUDGE: "§e§l淬炼属性: "
 #属性lore行识别符号，不冲突的情况下勿乱改
+LEVEL_STAR_DISPLAY_PREFIX: ""
+#星级lore显示前缀；留空时只显示星级文本，插件仍使用隐藏标记识别旧星级
 MoveLevelInvTitle: "淬炼移星"
 #移星界面标题
 JudgeOffHand: true

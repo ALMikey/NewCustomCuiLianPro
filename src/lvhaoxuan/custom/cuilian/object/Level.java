@@ -37,6 +37,7 @@ public class Level {
             for (int i = 0; i < lore.size(); i++) {
                 lore.set(i, lore.get(i).replace(NewCustomCuiLianPro.LEVEL_JUDGE, ""));
                 lore.set(i, lore.get(i).replace(NewCustomCuiLianPro.PROTECT_RUNE_JUDGE, ""));
+                lore.set(i, lore.get(i).replace(NewCustomCuiLianPro.LEVEL_MARKER, ""));
             }
             for (Level level : levels.values()) {
                 if (lore.containsAll(level.lore)) {
@@ -54,6 +55,7 @@ public class Level {
             for (int i = 0; i < lore.size(); i++) {
                 lore.set(i, lore.get(i).replace(NewCustomCuiLianPro.LEVEL_JUDGE, ""));
                 lore.set(i, lore.get(i).replace(NewCustomCuiLianPro.PROTECT_RUNE_JUDGE, ""));
+                lore.set(i, lore.get(i).replace(NewCustomCuiLianPro.LEVEL_MARKER, ""));
             }
             for (Level level : levels.values()) {
                 if (level.protectRune != null && lore.contains(level.protectRune.lore)) {

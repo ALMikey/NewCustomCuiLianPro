@@ -83,6 +83,11 @@ Hand:
     - "5833" # nevermine:LightsWay
     - "5834" # nevermine:ShyreSword
     - "5835" # nevermine:GodsGreatblade
+    # 更多
+    - "9280"
+    - "9297"
+    - "9373"
+    - "9510"
     # Nevermine 镰刀
     - "5379" # nevermine:ErebonScythe
     - "5380" # nevermine:SelyanScythe

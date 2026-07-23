@@ -10,6 +10,7 @@ import lvhaoxuan.custom.cuilian.object.ProtectRune;
 import lvhaoxuan.custom.cuilian.object.Stone;
 import lvhaoxuan.llib.api.LLibAPI;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EntityEquipment;
@@ -19,6 +20,7 @@ import org.bukkit.Material;
 
 public class CuiLianAPI {
 
+    private static final String BAOSHI_MARKER = "\u00a70[baoshi:";
     public static boolean hasOffHand;
 
     static {
@@ -98,27 +100,33 @@ public class CuiLianAPI {
             ItemMeta meta = item.getItemMeta();
             setDisplayName(item.getType(), meta, basicLevel);
             List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
+            List<String> baoshiLore = extractBaoshiLore(lore);
             lore = replaceLore(lore);
             lore = cleanLevel(lore);
             lore = cleanProtectRune(lore);
+            List<String> refiningLore = new ArrayList<>();
             if (level != null) {
                 if (!Message.UNDER_LINE.isEmpty()) {
-                    lore.add(Message.UNDER_LINE);
+                    refiningLore.add(Message.UNDER_LINE);
                 }
                 for (String line : level.lore) {
-                    lore.add(NewCustomCuiLianPro.LEVEL_JUDGE + line);
+                    refiningLore.add(NewCustomCuiLianPro.LEVEL_STAR_DISPLAY_PREFIX + line
+                            + NewCustomCuiLianPro.LEVEL_MARKER);
                 }
                 List<String> attributes = level.attribute.get(itemType.typeInBag);
                 if (attributes != null) {
                     for (String line : attributes) {
-                        lore.add(NewCustomCuiLianPro.LEVEL_JUDGE + line);
+                        refiningLore.add(NewCustomCuiLianPro.LEVEL_JUDGE + line);
                     }
                 }
             }
             Level protectRuneLevel = Level.byProtectRune(item);
             if (protectRuneLevel != null && protectRuneLevel.protectRune != null) {
-                lore.add(NewCustomCuiLianPro.PROTECT_RUNE_JUDGE + protectRuneLevel.protectRune.lore);
+                refiningLore.add(NewCustomCuiLianPro.PROTECT_RUNE_JUDGE + protectRuneLevel.protectRune.lore);
             }
+            // Keep the refinement and gem sections ahead of unrelated plugin descriptions.
+            lore.addAll(0, refiningLore);
+            lore.addAll(refiningLore.size(), baoshiLore);
             meta.setLore(lore);
             item.setItemMeta(meta);
         }
@@ -159,11 +167,12 @@ public class CuiLianAPI {
 
     public static List<String> cleanLevel(List<String> lore) {
         String levelJudge = NewCustomCuiLianPro.LEVEL_JUDGE;
-        boolean hasLevelJudge = levelJudge != null && !levelJudge.isEmpty();
+        boolean hasLevelJudge = levelJudge != null && !levelJudge.trim().isEmpty();
         Iterator<String> iterator = lore.iterator();
         while (iterator.hasNext()) {
             String line = iterator.next();
-            if ((hasLevelJudge && line.contains(levelJudge)) || line.equals(Message.UNDER_LINE)) {
+            if (line.contains(NewCustomCuiLianPro.LEVEL_MARKER)
+                    || (hasLevelJudge && line.contains(levelJudge)) || line.equals(Message.UNDER_LINE)) {
                 iterator.remove();
             }
         }
@@ -172,7 +181,7 @@ public class CuiLianAPI {
 
     public static List<String> cleanProtectRune(List<String> lore) {
         String protectRuneJudge = NewCustomCuiLianPro.PROTECT_RUNE_JUDGE;
-        if (protectRuneJudge == null || protectRuneJudge.isEmpty()) {
+        if (protectRuneJudge == null || protectRuneJudge.trim().isEmpty()) {
             return lore;
         }
         Iterator<String> iterator = lore.iterator();
@@ -183,6 +192,46 @@ public class CuiLianAPI {
             }
         }
         return lore;
+    }
+
+    /**
+     * Baoshi keeps its actual effects in hidden lore markers. Remove the entire section
+     * before generic attribute replacement, then put it back after the rebuilt refinement
+     * section so a ReplaceLore rule can never invalidate a socketed gem.
+     */
+    private static List<String> extractBaoshiLore(List<String> lore) {
+        int firstMarker = -1;
+        for (int index = 0; index < lore.size(); index++) {
+            if (lore.get(index).contains(BAOSHI_MARKER)) {
+                firstMarker = index;
+                break;
+            }
+        }
+        if (firstMarker == -1) {
+            return new ArrayList<>();
+        }
+        int header = -1;
+        for (int index = firstMarker - 1; index >= 0; index--) {
+            if (ChatColor.stripColor(lore.get(index)).contains("宝石镶嵌")) {
+                header = index;
+                break;
+            }
+        }
+        List<String> result = new ArrayList<>();
+        if (header >= 0) {
+            result.add(lore.get(header));
+        }
+        for (String line : lore) {
+            if (line.contains(BAOSHI_MARKER)) {
+                result.add(line);
+            }
+        }
+        for (int index = lore.size() - 1; index >= 0; index--) {
+            if (lore.get(index).contains(BAOSHI_MARKER) || index == header) {
+                lore.remove(index);
+            }
+        }
+        return result;
     }
 
     public static List<String> replaceLore(List<String> lore) {

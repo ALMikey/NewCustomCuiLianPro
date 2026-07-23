@@ -102,6 +102,8 @@ public class Loader {
             NewCustomCuiLianPro.otherEntitySuitEffect = config.getBoolean("OtherEntitySuitEffect");
             NewCustomCuiLianPro.PROTECT_RUNE_JUDGE = getNonEmptyString(config, "PROTECT_RUNE_JUDGE", "§a§l保护符: ");
             NewCustomCuiLianPro.LEVEL_JUDGE = getNonEmptyString(config, "LEVEL_JUDGE", "§e§l淬炼属性: ");
+            String starPrefix = config.getString("LEVEL_STAR_DISPLAY_PREFIX");
+            NewCustomCuiLianPro.LEVEL_STAR_DISPLAY_PREFIX = starPrefix == null ? "" : starPrefix;
             MoveLevelHandle.moveLevelInvTitle = config.getString("MoveLevelInvTitle");
             NewCustomCuiLianPro.judgeOffHand = config.getBoolean("JudgeOffHand");
             NewCustomCuiLianPro.displayNameFormat = config.getInt("DisplayNameFormat");
@@ -199,7 +201,7 @@ public class Loader {
 
     private static String getNonEmptyString(YamlConfiguration config, String path, String defaultValue) {
         String value = config.getString(path);
-        if (value == null || value.isEmpty()) {
+        if (value == null || value.trim().isEmpty()) {
             NewCustomCuiLianPro.ins.getLogger().warning("config.yml 的 " + path
                     + " 不能为空，已使用默认识别前缀以保护物品 Lore。");
             return defaultValue;

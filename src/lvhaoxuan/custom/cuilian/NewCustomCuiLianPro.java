@@ -26,6 +26,8 @@ public class NewCustomCuiLianPro extends JavaPlugin {
 
     public static String PROTECT_RUNE_JUDGE;
     public static String LEVEL_JUDGE;
+    public static String LEVEL_STAR_DISPLAY_PREFIX;
+    public static final String LEVEL_MARKER = "\u00a70[cuilian:level]";
     public static NewCustomCuiLianPro ins;
     public static HashMap<Material, String> typesInBag = new HashMap<>();
     public static List<ItemType> types = new ArrayList<>();
