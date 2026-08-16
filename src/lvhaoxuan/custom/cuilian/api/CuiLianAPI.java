@@ -248,6 +248,9 @@ public class CuiLianAPI {
     }
 
     public static Level getMinLevel(LivingEntity entity, EntityEquipment equipment) {
+        if (equipment == null) {
+            return null;
+        }
         int ret = -1;
         for (ItemStack item : equipment.getArmorContents()) {
             Level level = Level.byItemStack(item);

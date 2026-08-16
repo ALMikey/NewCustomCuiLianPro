@@ -3,22 +3,15 @@ package lvhaoxuan.custom.cuilian.loader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.util.logging.Logger;
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-import jdk.nashorn.api.scripting.*;
 import lvhaoxuan.custom.cuilian.NewCustomCuiLianPro;
 import lvhaoxuan.custom.cuilian.NewCustomCuiLianPro.ItemType;
 import lvhaoxuan.custom.cuilian.movelevel.MoveLevelHandle;
 import lvhaoxuan.custom.cuilian.object.Level;
 import lvhaoxuan.custom.cuilian.object.Stone;
-import lvhaoxuan.custom.cuilian.object.SuitEffect;
 import lvhaoxuan.custom.cuilian.object.BuiltinAttribute;
 import lvhaoxuan.custom.cuilian.object.BuiltinAttribute.AttributeType;
-import lvhaoxuan.llib.util.FileUtil;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 public class Loader {
@@ -110,49 +103,6 @@ public class Loader {
             NewCustomCuiLianPro.replaceLore = config.getStringList("ReplaceLore");
         } catch (FileNotFoundException | UnsupportedEncodingException ex) {
         }
-    }
-
-    public static String loadSuitEffectScriptStr(String name) {
-        if (!NewCustomCuiLianPro.ins.getDataFolder().exists()) {
-            NewCustomCuiLianPro.ins.getDataFolder().mkdir();
-        }
-        File folder = new File(NewCustomCuiLianPro.ins.getDataFolder(), "script");
-        if (!folder.exists()) {
-            folder.mkdir();
-        }
-        File file = new File(folder, name);
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-                FileUtil.write(file, SuitEffect.defaultScript);
-            } catch (IOException ex) {
-            }
-        }
-        return FileUtil.read(file);
-    }
-
-    public static ScriptEngine loadMoveLevelScript() {
-        if (!NewCustomCuiLianPro.ins.getDataFolder().exists()) {
-            NewCustomCuiLianPro.ins.getDataFolder().mkdir();
-        }
-        File file = new File(NewCustomCuiLianPro.ins.getDataFolder(), "movelevelscript.js");
-        if (!file.exists()) {
-            NewCustomCuiLianPro.ins.saveResource("movelevelscript.js", true);
-        }
-        return loadScript(file);
-    }
-
-    public static ScriptEngine loadScript(File file) {
-        if (file.exists()) {
-            ScriptEngine engine = new NashornScriptEngineFactory().getScriptEngine();
-            try {
-                engine.eval(FileUtil.read(file));
-            } catch (ScriptException ex) {
-                Logger.getLogger(Loader.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-            }
-            return engine;
-        }
-        return null;
     }
 
     public static void loadAttributes() {

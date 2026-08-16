@@ -27,12 +27,12 @@ public class SyncEffectRunnable implements Runnable {
 
     @Override
     public void run() {
-        for (LivingEntity le : getEntities()) {
-            try {
+        try {
+            for (LivingEntity le : getEntities()) {
                 sync(le);
-            } catch (ClassNotFoundException ex) {
-                Logger.getLogger(SyncEffectRunnable.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
             }
+        } catch (Throwable t) {
+            Logger.getLogger(SyncEffectRunnable.class.getName()).log(java.util.logging.Level.SEVERE, "套装药水/属性任务异常", t);
         }
     }
 
@@ -43,10 +43,7 @@ public class SyncEffectRunnable implements Runnable {
                 String[] args = potionStr.split(" ");
                 String potion = args[0];
                 int level = Integer.parseInt(args[1]);
-                Bukkit.getScheduler().callSyncMethod(NewCustomCuiLianPro.ins, () -> {
-                    le.addPotionEffect(new PotionEffect(PotionEffectType.getByName(potion), 20, level), true);
-                    return null;
-                });
+                le.addPotionEffect(new PotionEffect(PotionEffectType.getByName(potion), 20, level), true);
             }
             if (NewCustomCuiLianPro.apEnable && le instanceof Player) {
                 AttributeAPI.addAttribute((Player) le, "NewCustomCuiLianPro", minLevel.suitEffect.attribute, false);
@@ -60,17 +57,17 @@ public class SyncEffectRunnable implements Runnable {
                 SXAttribute.getApi().setEntityAPIData(SyncEffectRunnable.class, le.getUniqueId(), data);
             }
             if (!tmpMap.containsKey(le.getUniqueId())) {
-                le.sendMessage(Message.ENABLE_SUIT_EFFECT.replace("%s", minLevel.lore.get(0)));
+                sendSuitMessage(le, Message.ENABLE_SUIT_EFFECT.replace("%s", minLevel.lore.get(0)));
                 tmpMap.put(le.getUniqueId(), minLevel);
             } else {
                 Level level = tmpMap.get(le.getUniqueId());
                 if (level != minLevel) {
-                    le.sendMessage(Message.DISENABLE_SUIT_EFFECT.replace("%s", level.lore.get(0)));
+                    sendSuitMessage(le, Message.DISENABLE_SUIT_EFFECT.replace("%s", level.lore.get(0)));
                     tmpMap.remove(le.getUniqueId());
                 }
             }
         } else if (tmpMap.containsKey(le.getUniqueId())) {
-            le.sendMessage(Message.DISENABLE_SUIT_EFFECT.replace("%s", tmpMap.get(le.getUniqueId()).lore.get(0)));
+            sendSuitMessage(le, Message.DISENABLE_SUIT_EFFECT.replace("%s", tmpMap.get(le.getUniqueId()).lore.get(0)));
             tmpMap.remove(le.getUniqueId());
             if (NewCustomCuiLianPro.apEnable && le instanceof Player) {
                 AttributeAPI.deleteAttribute((Player) le, "NewCustomCuiLianPro");
@@ -95,5 +92,11 @@ public class SyncEffectRunnable implements Runnable {
             }
         }
         return entities;
+    }
+
+    private static void sendSuitMessage(LivingEntity entity, String message) {
+        if (entity instanceof Player) {
+            ((Player) entity).sendMessage(message);
+        }
     }
 }

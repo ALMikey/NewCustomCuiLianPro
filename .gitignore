@@ -1,0 +1,31 @@
+# ==== 构建产物（编译输出 + 打包 jar）====
+/build/
+/dist/
+/dist2/
+/build_out/
+srcs.txt
+
+# ==== 依赖 jar（大文件，外部可获取）====
+/lib/
+/store/
+
+# ==== NetBeans 私有设置 ====
+/nbproject/private/
+
+# ==== 旧 Nashorn 脚本（已废弃，改用纯 Java 实现）====
+/src/script/
+
+# ==== 日志 / 临时文件 ====
+*.log
+*.tmp
+
+# ==== 操作系统 / IDE 文件 ====
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/

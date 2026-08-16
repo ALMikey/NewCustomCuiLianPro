@@ -1,7 +1,10 @@
 package lvhaoxuan.custom.cuilian.util;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -15,6 +18,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 /** Exports live Nevermine item IDs because Forge IDs are assigned at server startup. */
 public final class NevermineItemExporter {
+
+    private static final List<XydArmorTarget> XYD_ARMOR = createXydArmorTargets();
 
     private NevermineItemExporter() {
     }
@@ -35,6 +40,7 @@ public final class NevermineItemExporter {
             List<ItemEntry> armor = new ArrayList<>();
             List<ItemEntry> swords = new ArrayList<>();
             List<ItemEntry> scythes = new ArrayList<>();
+            Map<String, ItemEntry> xydArmor = new LinkedHashMap<>();
             for (Object item : (Iterable<?>) registry) {
                 if (item == null || !itemClass.isInstance(item)) {
                     continue;
@@ -44,22 +50,25 @@ public final class NevermineItemExporter {
                     continue;
                 }
                 String registryName = identifier.toString();
-                if (!registryName.startsWith("nevermine:")) {
-                    continue;
-                }
                 String className = item.getClass().getName();
                 ItemEntry entry = new ItemEntry(((Integer) idMethod.invoke(registry, item)).intValue(), registryName, className);
-                if (className.contains(".item.armor.")) {
-                    armor.add(entry);
-                } else if (className.contains(".item.weapon.scythe.")) {
-                    scythes.add(entry);
-                } else if (className.contains(".item.weapon.sword.")
-                        || className.contains(".item.weapon.greatblade.")
-                        || className.contains(".item.weapon.claymore.")) {
-                    swords.add(entry);
+                if (registryName.startsWith("nevermine:")) {
+                    if (className.contains(".item.armor.")) {
+                        armor.add(entry);
+                    } else if (className.contains(".item.weapon.scythe.")) {
+                        scythes.add(entry);
+                    } else if (className.contains(".item.weapon.sword.")
+                            || className.contains(".item.weapon.greatblade.")
+                            || className.contains(".item.weapon.claymore.")) {
+                        swords.add(entry);
+                    }
+                }
+                if (isXydArmor(registryName)) {
+                    xydArmor.put(registryName, entry);
                 }
             }
             writeExport(armor, swords, scythes);
+            writeXydArmorExport(xydArmor);
         } catch (ClassNotFoundException ex) {
             // Nevermine is optional; no export is expected when it is absent.
         } catch (Exception ex) {
@@ -95,6 +104,61 @@ public final class NevermineItemExporter {
                 + "，剑系 " + swords.size() + "，镰刀 " + scythes.size());
     }
 
+    private static void writeXydArmorExport(Map<String, ItemEntry> entries) throws IOException {
+        File file = new File(NewCustomCuiLianPro.ins.getDataFolder(), "xyd-aoa-additions-items.yml");
+        Writer writer = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
+        try {
+            writer.write("# xyd_aoa_additions 防具 ID，由当前服务器 Forge 注册表自动导出。\n");
+            writer.write("# 将每个分组中的数字行追加到 items.yml 的同名节点。\n");
+            writer.write("# Mod 增删或加载顺序变化后，数字 ID 可能变化，应重新核对本文件。\n\n");
+            String[] slots = {"Helmet", "Chestplate", "Leggings", "Boots"};
+            for (String slot : slots) {
+                writer.write(slot + ":\n");
+                for (XydArmorTarget target : XYD_ARMOR) {
+                    if (!target.slot.equals(slot)) {
+                        continue;
+                    }
+                    ItemEntry entry = entries.get(target.registry);
+                    if (entry == null) {
+                        writer.write("  # 未找到: " + target.registry + " (" + target.name + ")\n");
+                    } else {
+                        writer.write("  - \"" + entry.id + "\" # " + entry.registry + " (" + target.name + ")\n");
+                    }
+                }
+                writer.write("\n");
+            }
+        } finally {
+            writer.close();
+        }
+        NewCustomCuiLianPro.ins.getLogger().info("导出 xyd_aoa_additions 防具 ID: "
+                + entries.size() + "/" + XYD_ARMOR.size());
+    }
+
+    private static boolean isXydArmor(String registryName) {
+        for (XydArmorTarget target : XYD_ARMOR) {
+            if (target.registry.equals(registryName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<XydArmorTarget> createXydArmorTargets() {
+        List<XydArmorTarget> targets = new ArrayList<>();
+        addArmorSet(targets, "Winter", "凛冬");
+        addArmorSet(targets, "Shadow", "幽影");
+        addArmorSet(targets, "Solar", "烈阳");
+        addArmorSet(targets, "Divine", "神界至尊");
+        return targets;
+    }
+
+    private static void addArmorSet(List<XydArmorTarget> targets, String suffix, String name) {
+        targets.add(new XydArmorTarget("Helmet", "xyd_aoa_additions:helmet" + suffix + "Xyd", name + "头盔"));
+        targets.add(new XydArmorTarget("Chestplate", "xyd_aoa_additions:chestplate" + suffix + "Xyd", name + "胸甲"));
+        targets.add(new XydArmorTarget("Leggings", "xyd_aoa_additions:legs" + suffix + "Xyd", name + "护腿"));
+        targets.add(new XydArmorTarget("Boots", "xyd_aoa_additions:boots" + suffix + "Xyd", name + "靴子"));
+    }
+
     private static void sort(List<ItemEntry> entries) {
         Collections.sort(entries, new Comparator<ItemEntry>() {
             @Override
@@ -126,6 +190,19 @@ public final class NevermineItemExporter {
             this.id = id;
             this.registry = registry;
             this.className = className;
+        }
+    }
+
+    private static class XydArmorTarget {
+
+        private final String slot;
+        private final String registry;
+        private final String name;
+
+        private XydArmorTarget(String slot, String registry, String name) {
+            this.slot = slot;
+            this.registry = registry;
+            this.name = name;
         }
     }
 }

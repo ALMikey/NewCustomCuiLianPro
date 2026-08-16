@@ -6,7 +6,7 @@ import lvhaoxuan.custom.cuilian.api.CuiLianAPI;
 import lvhaoxuan.custom.cuilian.movelevel.MoveLevelHandle;
 import lvhaoxuan.custom.cuilian.object.Level;
 import lvhaoxuan.custom.cuilian.object.Stone;
-import lvhaoxuan.custom.cuilian.runnable.ScriptRunnable;
+import lvhaoxuan.custom.cuilian.runnable.SuitParticleRunnable;
 import lvhaoxuan.llib.api.LLibAPI;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -85,9 +85,9 @@ public class Commander implements CommandExecutor {
                 }
                 sender.sendMessage("§c§m§l  §6§m§l  §e§m§l  §a§m§l  §b§m§l  §e§l淬炼§b§m§l  §a§m§l  §e§m§l  §6§m§l  §c§m§l  ");
             } else if (args.length == 1 && args[0].equals("reload")) {
-                ScriptRunnable.enbaleScript = false;
+                SuitParticleRunnable.particleEnable = false;
                 NewCustomCuiLianPro.enableConfig();
-                ScriptRunnable.enbaleScript = true;
+                SuitParticleRunnable.particleEnable = true;
                 sender.sendMessage(head + "重载成功");
             } else if (args.length == 1 && args[0].equals("test")) {
                 Player p = (Player) sender;

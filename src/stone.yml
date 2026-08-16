@@ -2,6 +2,8 @@ putong:
     Name: "§3§l普通淬炼宝石"
     Type: COAL
     Data: 0
+    # true 时显示附魔光效；已发放的旧宝石仍然可以使用。
+    Glow: true
     riseLevel: 1
     dropLevel: 2 3
     Lore:
@@ -36,6 +38,7 @@ zhongdeng:
     Name: "§5§l中等淬炼宝石"
     Type: COAL
     Data: 0
+    Glow: true
     riseLevel: 1
     dropLevel: 2 3
     Lore:   
@@ -70,6 +73,7 @@ gaodeng:
     Name: "§6§l高等淬炼宝石"
     Type: COAL
     Data: 0
+    Glow: true
     riseLevel: 1
     dropLevel: 2 3
     Lore:
@@ -104,6 +108,7 @@ yuangu:
     Name: "§6§l远古淬炼宝石"
     Type: COAL
     Data: 0
+    Glow: true
     riseLevel: 16
     dropLevel: 0
     Lore:
@@ -137,6 +142,7 @@ wanmei:
     Name: "§4§l完美淬炼宝石"
     Type: COAL
     Data: 0
+    Glow: true
     riseLevel: 1
     dropLevel: 0 3
     Lore:
@@ -171,6 +177,7 @@ cisan:
     Name: "§1§l次三级淬炼宝石"
     Type: COAL
     Data: 0
+    Glow: true
     riseLevel: 3
     dropLevel: 0 3
     Lore:
@@ -205,6 +212,7 @@ ciliu:
     Name: "§2§l次六级淬炼宝石"
     Type: COAL
     Data: 0
+    Glow: true
     riseLevel: 6
     dropLevel: 0 3
     Lore:
@@ -239,6 +247,7 @@ cijiu:
     Name: "§3§l次九级淬炼宝石"
     Type: COAL
     Data: 0
+    Glow: true
     riseLevel: 9
     dropLevel: 0 3
     Lore:
@@ -273,6 +282,7 @@ cishier:
     Name: "§4§l次十二级淬炼宝石"
     Type: COAL
     Data: 0
+    Glow: true
     riseLevel: 12
     dropLevel: 0 3
     Lore:
@@ -307,6 +317,7 @@ cishiwu:
     Name: "§5§l次十五级淬炼宝石"
     Type: COAL
     Data: 0
+    Glow: true
     riseLevel: 15
     dropLevel: 0 3
     Lore:
@@ -341,6 +352,7 @@ cishiba:
     Name: "§6§l次十八级淬炼宝石"
     Type: COAL
     Data: 0
+    Glow: true
     riseLevel: 18
     dropLevel: 0 3
     Lore:

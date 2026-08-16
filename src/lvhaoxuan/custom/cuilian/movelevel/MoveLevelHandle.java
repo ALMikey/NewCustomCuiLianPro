@@ -2,11 +2,7 @@ package lvhaoxuan.custom.cuilian.movelevel;
 
 import java.util.ArrayList;
 import java.util.List;
-import javax.script.Invocable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
 import lvhaoxuan.custom.cuilian.api.CuiLianAPI;
-import lvhaoxuan.custom.cuilian.loader.Loader;
 import lvhaoxuan.custom.cuilian.object.Level;
 import lvhaoxuan.llib.gui.Gui;
 import lvhaoxuan.llib.gui.GuiButton;
@@ -20,13 +16,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 public class MoveLevelHandle {
 
-    public static ScriptEngine engine;
     public static String moveLevelInvTitle;
     public static boolean enableMoveLevel = true;
-
-    public static void init() {
-        engine = Loader.loadMoveLevelScript();
-    }
 
     public static void open(Player p) {
         if (enableMoveLevel) {
@@ -62,21 +53,17 @@ public class MoveLevelHandle {
                     ItemStack left = inv.getItem(2);
                     ItemStack right = inv.getItem(4);
                     if (CuiLianAPI.canCuiLian(left) && CuiLianAPI.canCuiLian(right)) {
-                        try {
-                            Level level1 = Level.byItemStack(left);
-                            int leftLevel = (level1 != null ? level1.value : 0);
-                            if (leftLevel != 0) {
-                                Level level2 = Level.byItemStack(right);
-                                int rightLevel = (level2 != null ? level2.value : 0);
-                                Invocable invocable = (Invocable) engine;
-                                int targetLevel = Integer.parseInt((String) invocable.invokeFunction("handle", leftLevel, rightLevel));
-                                targetLevel = targetLevel <= Level.levels.size() ? targetLevel : Level.levels.size();
-                                Level targetLevelObj = Level.levels.get(targetLevel);
-                                inv.setItem(4, CuiLianAPI.setItemLevel(right, targetLevelObj));
-                                inv.setItem(2, CuiLianAPI.setItemLevel(left, null));
-                            }
-                        } catch (ScriptException | NoSuchMethodException ex) {
-                            enableMoveLevel = false;
+                        Level level1 = Level.byItemStack(left);
+                        int leftLevel = (level1 != null ? level1.value : 0);
+                        if (leftLevel != 0) {
+                            Level level2 = Level.byItemStack(right);
+                            int rightLevel = (level2 != null ? level2.value : 0);
+                            // 原 movelevelscript.js：handle(level1, level2) = level1 + level2 - 1
+                            int targetLevel = leftLevel + rightLevel - 1;
+                            targetLevel = targetLevel <= Level.levels.size() ? targetLevel : Level.levels.size();
+                            Level targetLevelObj = Level.levels.get(targetLevel);
+                            inv.setItem(4, CuiLianAPI.setItemLevel(right, targetLevelObj));
+                            inv.setItem(2, CuiLianAPI.setItemLevel(left, null));
                         }
                     }
                 }

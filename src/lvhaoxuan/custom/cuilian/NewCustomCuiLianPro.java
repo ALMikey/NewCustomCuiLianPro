@@ -10,8 +10,7 @@ import lvhaoxuan.custom.cuilian.listener.ProtectRuneListener;
 import lvhaoxuan.custom.cuilian.listener.AttributeListener;
 import lvhaoxuan.custom.cuilian.loader.Loader;
 import lvhaoxuan.custom.cuilian.metrics.Metrics;
-import lvhaoxuan.custom.cuilian.movelevel.MoveLevelHandle;
-import lvhaoxuan.custom.cuilian.runnable.ScriptRunnable;
+import lvhaoxuan.custom.cuilian.runnable.SuitParticleRunnable;
 import lvhaoxuan.custom.cuilian.runnable.SyncEffectRunnable;
 import lvhaoxuan.custom.cuilian.util.NevermineItemExporter;
 import lvhaoxuan.llib.util.MathUtil;
@@ -71,8 +70,9 @@ public class NewCustomCuiLianPro extends JavaPlugin {
                 NevermineItemExporter.export();
             }
         });
-        Bukkit.getScheduler().runTaskTimerAsynchronously(NewCustomCuiLianPro.ins, new ScriptRunnable(), 0, 2);
-        Bukkit.getScheduler().runTaskTimerAsynchronously(NewCustomCuiLianPro.ins, new SyncEffectRunnable(), 0, 10);
+        // Suit scripts access entities, worlds and particles, all of which must run on Bukkit's main thread.
+        Bukkit.getScheduler().runTaskTimer(NewCustomCuiLianPro.ins, new SuitParticleRunnable(), 0L, 10L);
+        Bukkit.getScheduler().runTaskTimer(NewCustomCuiLianPro.ins, new SyncEffectRunnable(), 0L, 20L);
     }
 
     public static void enableConfig() {
@@ -81,7 +81,6 @@ public class NewCustomCuiLianPro extends JavaPlugin {
         Loader.loadItems();
         Loader.loadLevels();
         Loader.loadStones();
-        MoveLevelHandle.init();
         Loader.loadAttributes();
     }
 

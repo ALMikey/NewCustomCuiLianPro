@@ -1,10 +1,14 @@
 package lvhaoxuan.custom.cuilian.object;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import lvhaoxuan.llib.api.LLibAPI;
 import lvhaoxuan.llib.loader.LoaderUtil;
+import lvhaoxuan.llib.nbt.BaseNBT;
+import lvhaoxuan.llib.nbt.ItemStackNBT;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -33,6 +37,12 @@ public class Stone {
                 if (stone.item.isSimilar(item)) {
                     return stone;
                 }
+                // Continue to accept stones issued before the glow setting
+                // was enabled, without accepting different configured stones.
+                ItemStack legacyStone = removeGlow(stone.item.clone());
+                if (!legacyStone.isSimilar(stone.item) && legacyStone.isSimilar(item)) {
+                    return stone;
+                }
             }
         }
         return null;
@@ -49,11 +59,37 @@ public class Stone {
                 }
             }
         }
-        return new Stone(LoaderUtil.readItemStack(config, path),
+        ItemStack item = LoaderUtil.readItemStack(config, path);
+        // Default to glow so existing server stone.yml files take effect
+        // immediately after the plugin update. Both Glow and glow are valid.
+        boolean glow = config.contains(path + ".Glow")
+                ? config.getBoolean(path + ".Glow")
+                : config.getBoolean(path + ".glow", true);
+        if (item != null && glow) {
+            item = addGlow(item);
+        }
+        return new Stone(item,
                 path,
                 new LevelDrop(config.getString(path + ".dropLevel")),
                 config.getInt(path + ".riseLevel"),
                 map);
+    }
+
+    private static ItemStack addGlow(ItemStack item) {
+        ItemStackNBT itemNbt = ItemStackNBT.readByItem(item);
+        List<BaseNBT> enchantments = new ArrayList<>(itemNbt.getList("ench"));
+        BaseNBT enchantment = new BaseNBT();
+        enchantment.setShort("id", (short) 34);
+        enchantment.setShort("lvl", (short) 1);
+        enchantments.add(enchantment);
+        itemNbt.setNBTList("ench", enchantments);
+        return itemNbt.writeToItemStack(item);
+    }
+
+    private static ItemStack removeGlow(ItemStack item) {
+        ItemStackNBT itemNbt = ItemStackNBT.readByItem(item);
+        itemNbt.remove("ench");
+        return itemNbt.writeToItemStack(item);
     }
 
     public static class LevelDrop {
