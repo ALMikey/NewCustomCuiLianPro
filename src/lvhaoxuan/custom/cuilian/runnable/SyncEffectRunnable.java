@@ -23,6 +23,8 @@ import org.bukkit.entity.Player;
 
 public class SyncEffectRunnable implements Runnable {
 
+    private static final int SUIT_POTION_DURATION_TICKS = 200;
+    private static final int SUIT_POTION_REFRESH_THRESHOLD_TICKS = 40;
     public static HashMap<UUID, Level> tmpMap = new HashMap<>();
 
     @Override
@@ -40,10 +42,7 @@ public class SyncEffectRunnable implements Runnable {
         Level minLevel = CuiLianAPI.getMinLevel(le, le.getEquipment());
         if (minLevel != null && minLevel.suitEffect != null) {
             for (String potionStr : minLevel.suitEffect.potionEffect) {
-                String[] args = potionStr.split(" ");
-                String potion = args[0];
-                int level = Integer.parseInt(args[1]);
-                le.addPotionEffect(new PotionEffect(PotionEffectType.getByName(potion), 20, level), true);
+                refreshPotionEffect(le, potionStr);
             }
             if (NewCustomCuiLianPro.apEnable && le instanceof Player) {
                 AttributeAPI.addAttribute((Player) le, "NewCustomCuiLianPro", minLevel.suitEffect.attribute, false);
@@ -98,5 +97,31 @@ public class SyncEffectRunnable implements Runnable {
         if (entity instanceof Player) {
             ((Player) entity).sendMessage(message);
         }
+    }
+
+    private static void refreshPotionEffect(LivingEntity entity, String potionStr) {
+        String[] args = potionStr.trim().split("\\s+");
+        PotionEffectType type = PotionEffectType.getByName(args[0]);
+        int amplifier = Integer.parseInt(args[1]);
+        PotionEffect active = findActivePotionEffect(entity, type);
+        if (active != null) {
+            if (active.getAmplifier() > amplifier) {
+                return;
+            }
+            if (active.getAmplifier() == amplifier
+                    && active.getDuration() > SUIT_POTION_REFRESH_THRESHOLD_TICKS) {
+                return;
+            }
+        }
+        entity.addPotionEffect(new PotionEffect(type, SUIT_POTION_DURATION_TICKS, amplifier), true);
+    }
+
+    private static PotionEffect findActivePotionEffect(LivingEntity entity, PotionEffectType type) {
+        for (PotionEffect effect : entity.getActivePotionEffects()) {
+            if (effect.getType().equals(type)) {
+                return effect;
+            }
+        }
+        return null;
     }
 }

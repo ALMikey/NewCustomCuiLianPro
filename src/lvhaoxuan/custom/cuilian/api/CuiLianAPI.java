@@ -50,47 +50,80 @@ public class CuiLianAPI {
     }
 
     public static ItemStack cuilian(Stone stone, ItemStack item, Player p) {
-        if (canCuiLian(item)) {
-            Level basicLevelObj = Level.byItemStack(item);
-            int basicLevel = (basicLevelObj != null ? basicLevelObj.value : 0);
-            Level toLevel;
-            double probability = LLibAPI.getRandom(0, 100);
-            boolean success = probability <= stone.chance.get(Level.levels.get(basicLevel + stone.riseLevel));
-            String sendMessage = null;
-            if (success) {
-                toLevel = Level.levels.get(basicLevel + stone.riseLevel);
-                item = setItemLevel(item, toLevel);
-                sendMessage = Message.SUCCESS.replace("%s", toLevel.lore.get(0));
-                if (toLevel.value >= 5) {
-                    Bukkit.broadcastMessage(Message.SERVER_SUCCESS.replace("%p", p.getDisplayName()).replace("%d", stone.item.getItemMeta().getDisplayName()).replace("%s", toLevel.lore.get(0)));
-                }
-            } else {
-                int dropLevel = stone.dropLevel.toInteger();
-                Level protectRune = Level.byProtectRune(item);
-                if (protectRune != null) {
-                    if (protectRune.value <= basicLevel) {
-                        if (basicLevel - protectRune.value <= dropLevel) {
-                            dropLevel = basicLevel - protectRune.value != 0 ? LLibAPI.getRandom(0, basicLevel - protectRune.value) : 0;
-                        }
-                        toLevel = Level.levels.get(basicLevel - dropLevel);
-                        item = setItemLevel(item, toLevel);
-                        sendMessage = Message.CUILIAN_FAIL_PROTECT_RUNE.replace("%s", toLevel.lore.get(0)).replace("%d", String.valueOf(dropLevel));
-                    } else {
-                        toLevel = Level.levels.get(basicLevel - dropLevel);
-                        item = setItemLevel(item, toLevel);
-                        sendMessage = Message.CUILIAN_FAIL.replace("%s", toLevel.lore.get(0)).replace("%d", String.valueOf(dropLevel));
-                    }
-                } else {
-                    toLevel = Level.levels.get(basicLevel - dropLevel);
-                    item = setItemLevel(item, toLevel);
-                    sendMessage = Message.CUILIAN_FAIL.replace("%s", toLevel != null ? toLevel.lore.get(0) : "§c§l淬炼消失").replace("%d", String.valueOf(dropLevel));
-                }
+        if (!canCuiLian(item) || stone == null) {
+            return item;
+        }
+
+        Level basicLevelObj = Level.byItemStack(item);
+        if (basicLevelObj == null && Level.hasRefinementData(item)) {
+            rejectRefinement(p, Message.CANNOT_IDENTIFY_LEVEL,
+                    "无法识别装备淬炼等级", stone, item);
+            return item;
+        }
+
+        int basicLevel = basicLevelObj != null ? basicLevelObj.value : 0;
+        Level successLevel = Level.levels.get(basicLevel + stone.riseLevel);
+        Double successChance = successLevel == null ? null : stone.chance.get(successLevel);
+        if (successLevel == null || successChance == null || successLevel.lore == null || successLevel.lore.isEmpty()) {
+            rejectRefinement(p, Message.CUILIAN_CONFIG_ERROR,
+                    "缺少目标等级或成功率配置 (from=" + basicLevel + ", rise=" + stone.riseLevel + ")", stone, item);
+            return item;
+        }
+
+        ItemStack result = item.clone();
+        String sendMessage;
+        double probability = LLibAPI.getRandom(0, 100);
+        if (probability <= successChance.doubleValue()) {
+            result = setItemLevel(result, successLevel);
+            sendMessage = Message.SUCCESS.replace("%s", successLevel.lore.get(0));
+            if (successLevel.value >= 5 && p != null) {
+                Bukkit.broadcastMessage(Message.SERVER_SUCCESS.replace("%p", p.getDisplayName())
+                        .replace("%d", stone.item.getItemMeta().getDisplayName())
+                        .replace("%s", successLevel.lore.get(0)));
             }
-            if (p != null) {
-                p.sendMessage(sendMessage);
+        } else {
+            int requestedDrop = Math.max(0, stone.dropLevel.toInteger());
+            int minimumLevel = basicLevel > 0 ? 1 : 0;
+            Level protectRune = Level.byProtectRune(item);
+            boolean protectedByRune = protectRune != null
+                    && protectRune.value >= minimumLevel && protectRune.value <= basicLevel;
+            if (protectedByRune) {
+                minimumLevel = protectRune.value;
+            }
+            int targetValue = Math.max(minimumLevel, basicLevel - requestedDrop);
+            int actualDrop = basicLevel - targetValue;
+            Level failureLevel = targetValue == 0 ? null : Level.levels.get(targetValue);
+            if (targetValue > 0 && (failureLevel == null || failureLevel.lore == null || failureLevel.lore.isEmpty())) {
+                rejectRefinement(p, Message.CUILIAN_CONFIG_ERROR,
+                        "缺少失败降级目标配置 (from=" + basicLevel + ", to=" + targetValue + ")", stone, item);
+                return item;
+            }
+            if (failureLevel != null) {
+                result = setItemLevel(result, failureLevel);
+            }
+            String levelLore = failureLevel != null ? failureLevel.lore.get(0) : "§f未淬炼";
+            if (actualDrop == 0) {
+                sendMessage = Message.CUILIAN_FAIL_UNCHANGED.replace("%s", levelLore);
+            } else {
+                String template = protectedByRune ? Message.CUILIAN_FAIL_PROTECT_RUNE : Message.CUILIAN_FAIL;
+                sendMessage = template.replace("%s", levelLore).replace("%d", String.valueOf(actualDrop));
             }
         }
-        return item;
+        if (p != null) {
+            p.sendMessage(sendMessage);
+        }
+        return result;
+    }
+
+    private static void rejectRefinement(Player player, String message, String reason, Stone stone, ItemStack item) {
+        if (player != null) {
+            player.sendMessage(message);
+        }
+        ItemMeta meta = item.getItemMeta();
+        List<String> lore = meta != null && meta.hasLore() ? meta.getLore() : new ArrayList<String>();
+        NewCustomCuiLianPro.ins.getLogger().warning("已取消淬炼并保留原物品: " + reason
+                + ", item=" + item.getTypeId() + ":" + item.getDurability()
+                + ", stone=" + (stone != null ? stone.id : "null") + ", lore=" + lore);
     }
 
     public static ItemStack setItemLevel(ItemStack item, Level level) {
@@ -111,7 +144,7 @@ public class CuiLianAPI {
                 }
                 for (String line : level.lore) {
                     refiningLore.add(NewCustomCuiLianPro.LEVEL_STAR_DISPLAY_PREFIX + line
-                            + NewCustomCuiLianPro.LEVEL_MARKER);
+                            + NewCustomCuiLianPro.createLevelMarker(level.value));
                 }
                 List<String> attributes = level.attribute.get(itemType.typeInBag);
                 if (attributes != null) {
@@ -171,8 +204,11 @@ public class CuiLianAPI {
         Iterator<String> iterator = lore.iterator();
         while (iterator.hasNext()) {
             String line = iterator.next();
-            if (line.contains(NewCustomCuiLianPro.LEVEL_MARKER)
-                    || (hasLevelJudge && line.contains(levelJudge)) || line.equals(Message.UNDER_LINE)) {
+            boolean hasStarPrefix = NewCustomCuiLianPro.LEVEL_STAR_DISPLAY_PREFIX != null
+                    && !NewCustomCuiLianPro.LEVEL_STAR_DISPLAY_PREFIX.isEmpty()
+                    && line.contains(NewCustomCuiLianPro.LEVEL_STAR_DISPLAY_PREFIX);
+            if (Level.containsLevelMarker(line) || (hasLevelJudge && line.contains(levelJudge))
+                    || hasStarPrefix || (Message.UNDER_LINE != null && line.equals(Message.UNDER_LINE))) {
                 iterator.remove();
             }
         }

@@ -24,6 +24,10 @@ public class Message {
     public static String UNDER_LINE;
     public static String ENABLE_SUIT_EFFECT;
     public static String DISENABLE_SUIT_EFFECT;
+    public static String CANNOT_IDENTIFY_LEVEL;
+    public static String CUILIAN_CONFIG_ERROR;
+    public static String CUILIAN_FAIL_UNCHANGED;
+    public static String CUILIAN_PROCESS_LOST;
 
     public static void loadMessages() {
         if (!NewCustomCuiLianPro.ins.getDataFolder().exists()) {
@@ -49,7 +53,20 @@ public class Message {
             UNDER_LINE = config1.getString("UNDER_LINE");
             ENABLE_SUIT_EFFECT = config1.getString("ENABLE_SUIT_EFFECT");
             DISENABLE_SUIT_EFFECT = config1.getString("DISENABLE_SUIT_EFFECT");
+            CANNOT_IDENTIFY_LEVEL = getString(config1, "CANNOT_IDENTIFY_LEVEL",
+                    "§c无法识别装备当前淬炼等级，已取消本次淬炼并保留原物品。");
+            CUILIAN_CONFIG_ERROR = getString(config1, "CUILIAN_CONFIG_ERROR",
+                    "§c淬炼配置异常，本次淬炼已取消并保留原物品。");
+            CUILIAN_FAIL_UNCHANGED = getString(config1, "CUILIAN_FAIL_UNCHANGED",
+                    "§c§l淬炼失败，装备等级保持不变：%s");
+            CUILIAN_PROCESS_LOST = getString(config1, "CUILIAN_PROCESS_LOST",
+                    "§c淬炼过程记录已失效，本次产出已取消，输入装备已保留，请重新放入淬炼宝石。");
         } catch (FileNotFoundException | UnsupportedEncodingException ex) {
         }
+    }
+
+    private static String getString(YamlConfiguration config, String path, String fallback) {
+        String value = config.getString(path);
+        return value == null || value.isEmpty() ? fallback : value;
     }
 }

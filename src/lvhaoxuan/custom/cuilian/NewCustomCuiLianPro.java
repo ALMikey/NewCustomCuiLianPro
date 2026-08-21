@@ -27,6 +27,7 @@ public class NewCustomCuiLianPro extends JavaPlugin {
     public static String LEVEL_JUDGE;
     public static String LEVEL_STAR_DISPLAY_PREFIX;
     public static final String LEVEL_MARKER = "\u00a70[cuilian:level]";
+    public static final String LEVEL_MARKER_PREFIX = "\u00a70[cuilian:level:";
     public static NewCustomCuiLianPro ins;
     public static HashMap<Material, String> typesInBag = new HashMap<>();
     public static List<ItemType> types = new ArrayList<>();
@@ -82,6 +83,10 @@ public class NewCustomCuiLianPro extends JavaPlugin {
         Loader.loadLevels();
         Loader.loadStones();
         Loader.loadAttributes();
+    }
+
+    public static String createLevelMarker(int level) {
+        return LEVEL_MARKER_PREFIX + level + "]";
     }
 
     public static void setRecipe() {
