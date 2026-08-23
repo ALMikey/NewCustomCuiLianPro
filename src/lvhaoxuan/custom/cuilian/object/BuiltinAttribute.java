@@ -51,6 +51,7 @@ public class BuiltinAttribute {
 
     public enum AttributeType {
         ATTACK,
-        DEFENSE
+        DEFENSE,
+        CRITICAL_CHANCE
     }
 }

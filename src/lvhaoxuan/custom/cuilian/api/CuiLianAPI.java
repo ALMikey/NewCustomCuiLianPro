@@ -51,6 +51,7 @@ public class CuiLianAPI {
 
     public static ItemStack cuilian(Stone stone, ItemStack item, Player p) {
         if (!canCuiLian(item) || stone == null) {
+            logSkippedRefinement(p, stone, item);
             return item;
         }
 
@@ -76,6 +77,8 @@ public class CuiLianAPI {
         if (probability <= successChance.doubleValue()) {
             result = setItemLevel(result, successLevel);
             sendMessage = Message.SUCCESS.replace("%s", successLevel.lore.get(0));
+            logSettlement(p, stone, item, result, basicLevel, successLevel.value,
+                    probability, successChance.doubleValue(), "SUCCESS", -1, -1);
             if (successLevel.value >= 5 && p != null) {
                 Bukkit.broadcastMessage(Message.SERVER_SUCCESS.replace("%p", p.getDisplayName())
                         .replace("%d", stone.item.getItemMeta().getDisplayName())
@@ -108,6 +111,10 @@ public class CuiLianAPI {
                 String template = protectedByRune ? Message.CUILIAN_FAIL_PROTECT_RUNE : Message.CUILIAN_FAIL;
                 sendMessage = template.replace("%s", levelLore).replace("%d", String.valueOf(actualDrop));
             }
+            String outcome = actualDrop == 0 ? "FAIL_UNCHANGED"
+                    : (protectedByRune ? "FAIL_PROTECTED" : "FAIL_DROP");
+            logSettlement(p, stone, item, result, basicLevel, targetValue,
+                    probability, successChance.doubleValue(), outcome, requestedDrop, actualDrop);
         }
         if (p != null) {
             p.sendMessage(sendMessage);
@@ -121,9 +128,50 @@ public class CuiLianAPI {
         }
         ItemMeta meta = item.getItemMeta();
         List<String> lore = meta != null && meta.hasLore() ? meta.getLore() : new ArrayList<String>();
-        NewCustomCuiLianPro.ins.getLogger().warning("已取消淬炼并保留原物品: " + reason
-                + ", item=" + item.getTypeId() + ":" + item.getDurability()
-                + ", stone=" + (stone != null ? stone.id : "null") + ", lore=" + lore);
+        NewCustomCuiLianPro.ins.getLogger().warning("[CuiLianDebug] result=REJECTED"
+                + " player=" + playerName(player) + " reason=" + reason
+                + " item=" + describeItem(item) + " stone=" + stoneId(stone)
+                + " lore=" + lore);
+    }
+
+    private static void logSkippedRefinement(Player player, Stone stone, ItemStack item) {
+        NewCustomCuiLianPro.ins.getLogger().warning("[CuiLianDebug] result=SKIPPED"
+                + " player=" + playerName(player) + " stone=" + stoneId(stone)
+                + " item=" + describeItem(item) + " reason="
+                + (stone == null ? "stone-null" : "item-not-configured"));
+    }
+
+    private static void logSettlement(Player player, Stone stone, ItemStack before, ItemStack after,
+            int fromLevel, int toLevel, double roll, double chance, String outcome,
+            int requestedDrop, int actualDrop) {
+        String dropDetails = requestedDrop < 0 ? ""
+                : " requestedDrop=" + requestedDrop + " actualDrop=" + actualDrop;
+        NewCustomCuiLianPro.ins.getLogger().info("[CuiLianDebug] result=" + outcome
+                + " player=" + playerName(player) + " stone=" + stoneId(stone)
+                + " item=" + describeItem(before) + " level=" + fromLevel + "->" + toLevel
+                + " roll=" + roll + " chance=" + chance + dropDetails);
+        NewCustomCuiLianPro.ins.getLogger().info("[CuiLianDebug] beforeLore=" + itemLore(before)
+                + " afterLore=" + itemLore(after));
+    }
+
+    private static String playerName(Player player) {
+        return player != null ? player.getName() : "unknown";
+    }
+
+    private static String stoneId(Stone stone) {
+        return stone != null ? stone.id : "null";
+    }
+
+    private static String describeItem(ItemStack item) {
+        return item == null ? "null" : item.getTypeId() + ":" + item.getDurability();
+    }
+
+    private static List<String> itemLore(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return new ArrayList<String>();
+        }
+        ItemMeta meta = item.getItemMeta();
+        return meta.hasLore() ? meta.getLore() : new ArrayList<String>();
     }
 
     public static ItemStack setItemLevel(ItemStack item, Level level) {

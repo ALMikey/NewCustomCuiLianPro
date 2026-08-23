@@ -40,6 +40,7 @@ public class NewCustomCuiLianPro extends JavaPlugin {
     public static boolean sxv3Enable = false;
     public static boolean builtinAttributeEnable = false;
     public static boolean builtinAttributeDebug = false;
+    public static double builtinCriticalMultiplier = 2.0D;
 
     @Override
     public void onEnable() {
@@ -116,17 +117,20 @@ public class NewCustomCuiLianPro extends JavaPlugin {
         public int itemId;
         public short data;
         public boolean hasData;
+        public boolean numericId;
 
         public ItemType(String typeInBag, String baseType) {
             this.typeInBag = typeInBag;
             this.baseType = baseType;
             String[] args = baseType.split(":", 2);
             if (MathUtil.isNumeric(args[0])) {
+                numericId = true;
                 itemId = Integer.parseInt(args[0]);
                 hasData = args.length == 2;
                 data = hasData ? Short.parseShort(args[1]) : 0;
                 type = Material.getMaterial(itemId);
             } else {
+                numericId = false;
                 type = Material.getMaterial(baseType);
                 if (type == null) {
                     throw new IllegalArgumentException("未知物品类型: " + baseType);
@@ -149,11 +153,15 @@ public class NewCustomCuiLianPro extends JavaPlugin {
                     // Forge tool damage shares Bukkit's durability field. For raw Mod IDs,
                     // treating an optional :Data suffix as a strict metadata value would make
                     // a worn tool disappear from the configured item list.
-                    && (!hasData || type == null || item.getDurability() == data);
+                    && (!hasData || numericId || item.getDurability() == data);
         }
 
         public boolean canUseBukkitRecipe() {
-            return type != null && mData != null;
+            // Uranium may expose a Forge item ID as a synthetic Bukkit Material.
+            // Such items still cannot safely use Bukkit's furnace recipe matcher once
+            // refinement Lore/NBT has been added. A numeric config entry therefore
+            // always uses FurnaceListener's dedicated Mod-item transaction path.
+            return !numericId && type != null && mData != null;
         }
     }
 }

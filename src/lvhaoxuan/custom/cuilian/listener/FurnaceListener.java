@@ -178,7 +178,11 @@ public class FurnaceListener implements Listener {
         Location location = furnace.getLocation();
         ModFurnaceProcess process = trackedModFurnaces.get(location);
         if (process == null) {
-            trackedModFurnaces.put(location, new ModFurnaceProcess(owner));
+            process = new ModFurnaceProcess(owner);
+            trackedModFurnaces.put(location, process);
+            logFurnaceStage("TRACK", furnace, process.owner,
+                    furnace.getInventory().getSmelting(), furnace.getInventory().getFuel(),
+                    furnace.getInventory().getResult(), "configuredNumericId=true");
         } else if (owner != null && !owner.isEmpty()) {
             process.owner = owner;
         }
@@ -262,19 +266,25 @@ public class FurnaceListener implements Listener {
                 iterator.remove();
                 continue;
             }
+
             ItemStack fuel = furnace.getInventory().getFuel();
             Stone stone = Stone.byItemStack(fuel);
             Level level = Level.byItemStack(smelt);
             ItemStack currentResult = furnace.getInventory().getResult();
             if (stone == null || Level.levels.get((level != null ? level.value : 0) + stone.riseLevel) == null
-                    || (currentResult != null && currentResult.getType() != Material.AIR && currentResult.getAmount() > 0)) {
-                entry.getValue().cookTicks = 0;
-                furnace.setCookTime((short) 0);
-                furnace.setBurnTime((short) 0);
+                    || !isEmpty(currentResult)) {
+                resetModProcess(furnace, entry.getValue(), stone == null ? "invalidStone"
+                        : (!isEmpty(currentResult) ? "outputOccupied" : "targetLevelMissing"));
                 continue;
             }
 
             ModFurnaceProcess process = entry.getValue();
+            if (!process.matches(smelt, stone)) {
+                process.capture(smelt, stone);
+                logFurnaceStage("START", furnace, process.owner, smelt, fuel, currentResult,
+                        "stone=" + stone.id + ",level=" + (level == null ? 0 : level.value));
+            }
+
             process.cookTicks++;
             furnace.setBurnTime(MOD_SMELT_TICKS);
             if (process.cookTicks < MOD_SMELT_TICKS) {
@@ -282,32 +292,139 @@ public class FurnaceListener implements Listener {
                 continue;
             }
 
-            process.cookTicks = 0;
-            furnace.setCookTime((short) 0);
-            furnace.setBurnTime((short) 0);
             ItemStack result = smelt.clone();
             result.setAmount(1);
-            Player player = Bukkit.getPlayer(process.owner);
+            Player player = resolveFurnacePlayer(furnace, process.owner);
             result = CuiLianAPI.cuilian(stone, result, player);
+
+            // Write and verify the output before consuming either input. Uranium can
+            // reject a refined Forge ItemStack after its Lore/NBT changes; consuming
+            // first caused the old silent stone-loss failure.
+            furnace.getInventory().setResult(result.clone());
+            ItemStack writtenResult = furnace.getInventory().getResult();
+            if (isEmpty(writtenResult) || !writtenResult.isSimilar(result)) {
+                furnace.getInventory().setResult(null);
+                logFurnaceStage("COMMIT_FAILED", furnace, process.owner, smelt, fuel,
+                        writtenResult, "outputWriteRejected=true");
+                resetModProcess(furnace, process, "outputWriteRejected");
+                continue;
+            }
+
             furnace.getInventory().setSmelting(null);
-            if (fuel.getAmount() <= 1) {
+            ItemStack liveFuel = furnace.getInventory().getFuel();
+            if (liveFuel == null || liveFuel.getAmount() <= 1) {
                 furnace.getInventory().setFuel(null);
             } else {
-                fuel.setAmount(fuel.getAmount() - 1);
-                furnace.getInventory().setFuel(fuel);
+                ItemStack remainingFuel = liveFuel.clone();
+                remainingFuel.setAmount(liveFuel.getAmount() - 1);
+                furnace.getInventory().setFuel(remainingFuel);
             }
-            furnace.getInventory().setResult(result);
-            furnace.update(true);
+            furnace.setCookTime((short) 0);
+            furnace.setBurnTime((short) 0);
+            logFurnaceStage("COMMIT", furnace, process.owner,
+                    furnace.getInventory().getSmelting(), furnace.getInventory().getFuel(),
+                    furnace.getInventory().getResult(), "stone=" + stone.id);
+
+            final Location committedLocation = furnace.getLocation();
+            final String committedOwner = process.owner;
+            final ItemStack expectedResult = result.clone();
+            iterator.remove();
+            scheduleCommitVerification(committedLocation, committedOwner, expectedResult);
         }
+    }
+
+    private void resetModProcess(Furnace furnace, ModFurnaceProcess process, String reason) {
+        if (process.started || process.cookTicks > 0) {
+            logFurnaceStage("RESET", furnace, process.owner,
+                    furnace.getInventory().getSmelting(), furnace.getInventory().getFuel(),
+                    furnace.getInventory().getResult(), "reason=" + reason);
+        }
+        process.reset();
+        furnace.setCookTime((short) 0);
+        furnace.setBurnTime((short) 0);
+    }
+
+    private void scheduleCommitVerification(final Location location, final String owner,
+            final ItemStack expectedResult) {
+        Bukkit.getScheduler().runTask(NewCustomCuiLianPro.ins, new Runnable() {
+            @Override
+            public void run() {
+                if (!(location.getBlock().getState() instanceof Furnace)) {
+                    NewCustomCuiLianPro.ins.getLogger().warning("[CuiLianFurnaceDebug] stage=VERIFY"
+                            + " location=" + describeLocation(location) + " furnaceMissing=true");
+                    return;
+                }
+                Furnace furnace = (Furnace) location.getBlock().getState();
+                ItemStack output = furnace.getInventory().getResult();
+                boolean present = !isEmpty(output) && output.isSimilar(expectedResult);
+                logFurnaceStage("VERIFY", furnace, owner,
+                        furnace.getInventory().getSmelting(), furnace.getInventory().getFuel(), output,
+                        "expectedPresent=" + present);
+                for (HumanEntity viewer : furnace.getInventory().getViewers()) {
+                    if (viewer instanceof Player) {
+                        ((Player) viewer).updateInventory();
+                    }
+                }
+            }
+        });
+    }
+
+    private void logFurnaceStage(String stage, Furnace furnace, String owner,
+            ItemStack input, ItemStack fuel, ItemStack output, String detail) {
+        NewCustomCuiLianPro.ins.getLogger().info("[CuiLianFurnaceDebug] stage=" + stage
+                + " player=" + (owner == null || owner.isEmpty() ? "<unknown>" : owner)
+                + " location=" + describeLocation(furnace.getLocation())
+                + " input=" + describeItem(input)
+                + " fuel=" + describeItem(fuel)
+                + " output=" + describeItem(output)
+                + (detail == null || detail.isEmpty() ? "" : " " + detail));
+    }
+
+    private static String describeLocation(Location location) {
+        return (location.getWorld() == null ? "<unknown>" : location.getWorld().getName())
+                + ":" + location.getBlockX() + "," + location.getBlockY() + "," + location.getBlockZ();
+    }
+
+    private static String describeItem(ItemStack item) {
+        if (isEmpty(item)) {
+            return "<empty>";
+        }
+        return item.getTypeId() + ":" + item.getDurability() + "x" + item.getAmount();
+    }
+
+    private static boolean isEmpty(ItemStack item) {
+        return item == null || item.getType() == Material.AIR || item.getAmount() <= 0;
     }
 
     private static final class ModFurnaceProcess {
 
         private String owner;
         private int cookTicks;
+        private ItemStack source;
+        private String stoneId;
+        private boolean started;
 
         private ModFurnaceProcess(String owner) {
             this.owner = owner == null ? "" : owner;
+        }
+
+        private boolean matches(ItemStack item, Stone stone) {
+            return started && source != null && item != null && source.isSimilar(item)
+                    && stone != null && stone.id.equals(stoneId);
+        }
+
+        private void capture(ItemStack item, Stone stone) {
+            source = item.clone();
+            stoneId = stone.id;
+            cookTicks = 0;
+            started = true;
+        }
+
+        private void reset() {
+            source = null;
+            stoneId = null;
+            cookTicks = 0;
+            started = false;
         }
     }
 

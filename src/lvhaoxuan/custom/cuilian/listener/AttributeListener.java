@@ -2,6 +2,7 @@ package lvhaoxuan.custom.cuilian.listener;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import lvhaoxuan.custom.cuilian.NewCustomCuiLianPro;
 import lvhaoxuan.custom.cuilian.object.BuiltinAttribute;
 import lvhaoxuan.custom.cuilian.object.BuiltinAttribute.AttributeType;
@@ -36,8 +37,17 @@ public class AttributeListener implements Listener {
         }
         double attackValue = scanEquipment(attacker, AttributeType.ATTACK);
         double defenseValue = scanEquipment(defender, AttributeType.DEFENSE);
+        double criticalChance = clampChance(scanEquipment(attacker, AttributeType.CRITICAL_CHANCE));
         double oldDamage = event.getDamage();
-        double damage = oldDamage + attackValue;
+        // event.getDamage() already contains the vanilla or Forge/Mod weapon damage.
+        // Add the refinement/Lore attack value first, then multiply the entire attack
+        // so a critical hit covers both weapon damage and refinement damage.
+        double combinedAttackDamage = oldDamage + attackValue;
+        double criticalRoll = ThreadLocalRandom.current().nextDouble(100.0D);
+        boolean critical = criticalChance > 0.0D && criticalRoll < criticalChance;
+        double damage = critical
+                ? combinedAttackDamage * NewCustomCuiLianPro.builtinCriticalMultiplier
+                : combinedAttackDamage;
         damage = Math.max(0, damage - defenseValue);
         event.setDamage(damage);
         if (NewCustomCuiLianPro.builtinAttributeDebug
@@ -45,8 +55,18 @@ public class AttributeListener implements Listener {
             NewCustomCuiLianPro.ins.getLogger().info("[AttrDebug] event attacker="
                     + getEntityName(attacker) + " defender=" + getEntityName(defender)
                     + " atk=" + attackValue + " def=" + defenseValue
-                    + " damage=" + oldDamage + " -> " + damage);
+                    + " criticalChance=" + criticalChance + "% criticalRoll=" + criticalRoll
+                    + " critical=" + critical
+                    + " multiplier=" + NewCustomCuiLianPro.builtinCriticalMultiplier
+                    + " damage=" + oldDamage + " + " + attackValue + " -> " + damage);
         }
+    }
+
+    private static double clampChance(double chance) {
+        if (Double.isNaN(chance) || Double.isInfinite(chance)) {
+            return 0.0D;
+        }
+        return Math.max(0.0D, Math.min(100.0D, chance));
     }
 
     private LivingEntity getAttacker(EntityDamageByEntityEvent event) {

@@ -109,6 +109,7 @@ public class Loader {
         BuiltinAttribute.attributes.clear();
         NewCustomCuiLianPro.builtinAttributeEnable = false;
         NewCustomCuiLianPro.builtinAttributeDebug = false;
+        NewCustomCuiLianPro.builtinCriticalMultiplier = 2.0D;
         if (!NewCustomCuiLianPro.ins.getDataFolder().exists()) {
             NewCustomCuiLianPro.ins.getDataFolder().mkdir();
         }
@@ -121,6 +122,13 @@ public class Loader {
             YamlConfiguration config = YamlConfiguration.loadConfiguration(reader);
             NewCustomCuiLianPro.builtinAttributeEnable = config.getBoolean("enabled", false);
             NewCustomCuiLianPro.builtinAttributeDebug = config.getBoolean("debug", false);
+            double criticalMultiplier = config.getDouble("critical.multiplier", 2.0D);
+            if (Double.isNaN(criticalMultiplier) || Double.isInfinite(criticalMultiplier)
+                    || criticalMultiplier < 1.0D) {
+                NewCustomCuiLianPro.ins.getLogger().warning("attribute.yml 的 critical.multiplier 无效，已使用默认值 2.0");
+                criticalMultiplier = 2.0D;
+            }
+            NewCustomCuiLianPro.builtinCriticalMultiplier = criticalMultiplier;
             if (NewCustomCuiLianPro.builtinAttributeEnable) {
                 NewCustomCuiLianPro.ins.getServer().getConsoleSender().sendMessage("§7[§e" + NewCustomCuiLianPro.ins.getName() + "§7]§a内置属性模块已加载");
                 org.bukkit.configuration.ConfigurationSection cs = config.getConfigurationSection("attributes");
@@ -139,7 +147,8 @@ public class Loader {
                                 }
                             } catch (IllegalArgumentException ex) {
                                 NewCustomCuiLianPro.ins.getLogger().warning("attribute.yml 中属性 " + key
-                                        + " 的 type 无效: " + typeStr + "，可用值为 ATTACK 或 DEFENSE");
+                                        + " 的 type 无效: " + typeStr
+                                        + "，可用值为 ATTACK、DEFENSE 或 CRITICAL_CHANCE");
                             }
                         }
                     }

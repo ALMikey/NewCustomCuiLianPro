@@ -34,7 +34,6 @@ Hand:
     - "5150" # nevermine:ShroomusSword
     - "5151" # nevermine:HarvesterSword
     - "5152" # nevermine:RunicSword
-    - "5153" # nevermine:BaronSword
     - "5154" # nevermine:ExplochronSword
     - "5155" # nevermine:CoralstormSword
     - "5156" # nevermine:RosidianSword
@@ -53,7 +52,6 @@ Hand:
     - "5377" # nevermine:LelyetianGreatblade
     - "5378" # nevermine:RoyalGreatblade
     - "5488" # nevermine:GoofyGreatblade
-    - "5521" # nevermine:Ultraflame
     - "5522" # nevermine:VoidSword
     - "5524" # nevermine:Grandsword
     - "5526" # nevermine:CrystalGreatblade
@@ -67,20 +65,13 @@ Hand:
     - "5695" # nevermine:MilleniumGreatblade
     - "5717" # nevermine:CreepifiedSword
     - "5718" # nevermine:VulcammerSword
-    - "5800" # nevermine:HolySword
-    - "5801" # nevermine:CandlefireSword
     - "5802" # nevermine:SupremecySword
-    - "5803" # nevermine:TerrestrialSword
     - "5804" # nevermine:DivinitySword
-    - "5805" # nevermine:DiamondheadSword
-    - "5806" # nevermine:SlowstoneSword
-    - "5807" # nevermine:WitherstoneSword
     - "5808" # nevermine:WitherstoneGreatblade
     - "5809" # nevermine:SlowstoneGreatblade
     - "5810" # nevermine:Burnblade
     - "5811" # nevermine:TerrestrialGreatblade
     - "5823" # nevermine:KnightsGuard
-    - "5833" # nevermine:LightsWay
     - "5834" # nevermine:ShyreSword
     - "5835" # nevermine:GodsGreatblade
     # 更多
@@ -118,9 +109,6 @@ Helmet:
     - "4951" # RunicHelmet
     - "4955" # PhantasmHelmet
     - "4959" # NightmareHelmet
-    - "4963" # SealordHelmet
-    - "4964" # AchelosHelmet
-    - "4965" # OceanusHelmet
     - "4966" # PrimordialHelmet
     - "4970" # RosidianHelmet
     - "4974" # LyonicHelmet
@@ -138,15 +126,12 @@ Helmet:
     - "5305" # ElecanyteHelmet
     - "5309" # SharpshotHelmet
     - "5313" # RockboneHelmet
-    - "5349" # AuguryHelmet
     - "5353" # CreationHelmet
     - "5357" # HunterHelmet
     - "5361" # InfusionHelmet
     - "5365" # ForagingHelmet
     - "5369" # ExoplateHelmet
     - "5373" # ThermalHelmet
-    - "5374" # FaceMask
-    - "5375" # NightVisionGoggles
     - "5452" # RunationHelmet
     - "5500" # InnervationHelmet
     - "5504" # VitalityHelmet
@@ -158,7 +143,6 @@ Helmet:
     - "5647" # LoggingHelmet
     - "5651" # HermetismHelmet
     - "5655" # VulcanismHelmet
-    - "5659" # ButcheryHelmet
     - "5663" # ZargoniteHelmet
     - "5667" # SpaceKingHelmet
     - "5671" # ArchaicHelmet
@@ -169,6 +153,10 @@ Helmet:
     - "5767" # AmethindHelmet
     - "5771" # HaulingHelmet
     - "5819" # KnightHelmet
+    - "9123" # xyd_aoa_additions:helmetWinterXyd (凛冬头盔)
+    - "9232" # xyd_aoa_additions:helmetShadowXyd (幽影头盔)
+    - "9179" # xyd_aoa_additions:helmetSolarXyd (烈阳头盔)
+    - "9184" # xyd_aoa_additions:helmetDivineXyd (神界至尊头盔)
 Chestplate:
     # 原版胸甲
     - CHAINMAIL_CHESTPLATE
@@ -211,7 +199,6 @@ Chestplate:
     - "5303" # ElecanyteChestplate
     - "5307" # SharpshotChestplate
     - "5311" # RockboneChestplate
-    - "5347" # AuguryChestplate
     - "5351" # CreationChestplate
     - "5355" # HunterChestplate
     - "5359" # InfusionChestplate
@@ -229,7 +216,6 @@ Chestplate:
     - "5648" # LoggingChestplate
     - "5652" # HermetismChestplate
     - "5656" # VulcanismChestplate
-    - "5660" # ButcheryChestplate
     - "5664" # ZargoniteChestplate
     - "5668" # SpaceKingChestplate
     - "5672" # ArchaicChestplate
@@ -240,6 +226,10 @@ Chestplate:
     - "5768" # AmethindChestplate
     - "5772" # HaulingChestplate
     - "5820" # KnightChestplate
+    - "9359" # xyd_aoa_additions:chestplateWinterXyd (凛冬胸甲)
+    - "9433" # xyd_aoa_additions:chestplateShadowXyd (幽影胸甲)
+    - "9477" # xyd_aoa_additions:chestplateSolarXyd (烈阳胸甲)
+    - "9197" # xyd_aoa_additions:chestplateDivineXyd (神界至尊胸甲)
 Leggings:
     # 原版护腿
     - CHAINMAIL_LEGGINGS
@@ -282,7 +272,6 @@ Leggings:
     - "5304" # ElecanyteLeggings
     - "5308" # SharpshotLeggings
     - "5312" # RockboneLeggings
-    - "5348" # AuguryLeggings
     - "5352" # CreationLeggings
     - "5356" # HunterLeggings
     - "5360" # InfusionLeggings
@@ -300,7 +289,6 @@ Leggings:
     - "5649" # LoggingLeggings
     - "5653" # HermetismLeggings
     - "5657" # VulcanismLeggings
-    - "5661" # ButcheryLeggings
     - "5665" # ZargoniteLeggings
     - "5669" # SpaceKingLeggings
     - "5673" # ArchaicLeggings
@@ -311,6 +299,10 @@ Leggings:
     - "5769" # AmethindLeggings
     - "5773" # HaulingLeggings
     - "5821" # KnightLeggings
+    - "9181" # xyd_aoa_additions:legsWinterXyd (凛冬护腿)
+    - "9176" # xyd_aoa_additions:legsShadowXyd (幽影护腿)
+    - "9217" # xyd_aoa_additions:legsSolarXyd (烈阳护腿)
+    - "9523" # xyd_aoa_additions:legsDivineXyd (神界至尊护腿)
 Boots:
     # 原版靴子
     - CHAINMAIL_BOOTS
@@ -353,7 +345,6 @@ Boots:
     - "5302" # ElecanyteBoots
     - "5306" # SharpshotBoots
     - "5310" # RockboneBoots
-    - "5346" # AuguryBoots
     - "5350" # CreationBoots
     - "5354" # HunterBoots
     - "5358" # InfusionBoots
@@ -371,7 +362,6 @@ Boots:
     - "5650" # LoggingBoots
     - "5654" # HermetismBoots
     - "5658" # VulcanismBoots
-    - "5662" # ButcheryBoots
     - "5666" # ZargoniteBoots
     - "5670" # SpaceKingBoots
     - "5674" # ArchaicBoots
@@ -382,3 +372,7 @@ Boots:
     - "5770" # AmethindBoots
     - "5774" # HaulingBoots
     - "5822" # KnightBoots
+    - "9113" # xyd_aoa_additions:bootsWinterXyd (凛冬靴子)
+    - "9259" # xyd_aoa_additions:bootsShadowXyd (幽影靴子)
+    - "9483" # xyd_aoa_additions:bootsSolarXyd (烈阳靴子)
+    - "9219" # xyd_aoa_additions:bootsDivineXyd (神界至尊靴子)

@@ -6,7 +6,7 @@ rem ============ Dependency classpath ============
 set CP=lib\LLib.jar;lib\spigot-1.12.2-R0.1-SNAPSHOT-b1648.jar;lib\AttributePlus-3.3.3.0.jar;lib\SX-Attribute-3.6.4.jar
 set BUILD=build_out
 set OUTJAR=dist\NewCustomCuiLianPro.jar
-set VERSION=4.4.24
+set VERSION=4.4.27
 
 rem ============ JDK required on PATH ============
 where javac >nul 2>nul
