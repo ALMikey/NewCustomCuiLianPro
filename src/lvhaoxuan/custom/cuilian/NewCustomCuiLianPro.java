@@ -41,6 +41,8 @@ public class NewCustomCuiLianPro extends JavaPlugin {
     public static boolean builtinAttributeEnable = false;
     public static boolean builtinAttributeDebug = false;
     public static double builtinCriticalMultiplier = 2.0D;
+    public static boolean builtinModSharpnessCompatibility = true;
+    public static double builtinSharpnessDamagePerLevel = 1.25D;
 
     @Override
     public void onEnable() {

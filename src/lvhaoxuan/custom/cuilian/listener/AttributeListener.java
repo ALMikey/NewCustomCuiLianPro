@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import lvhaoxuan.custom.cuilian.NewCustomCuiLianPro;
+import lvhaoxuan.custom.cuilian.api.CuiLianAPI;
 import lvhaoxuan.custom.cuilian.object.BuiltinAttribute;
 import lvhaoxuan.custom.cuilian.object.BuiltinAttribute.AttributeType;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -15,6 +17,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -39,10 +42,12 @@ public class AttributeListener implements Listener {
         double defenseValue = scanEquipment(defender, AttributeType.DEFENSE);
         double criticalChance = clampChance(scanEquipment(attacker, AttributeType.CRITICAL_CHANCE));
         double oldDamage = event.getDamage();
+        SharpnessCompensation sharpness = getModSharpnessCompensation(event, attacker);
         // event.getDamage() already contains the vanilla or Forge/Mod weapon damage.
-        // Add the refinement/Lore attack value first, then multiply the entire attack
-        // so a critical hit covers both weapon damage and refinement damage.
-        double combinedAttackDamage = oldDamage + attackValue;
+        // Some Mod weapons bypass the vanilla melee path and expose only their fixed
+        // damage to Bukkit. Compensate Sharpness only for configured numeric-ID hand
+        // items; vanilla Material weapons already include it and must not be doubled.
+        double combinedAttackDamage = oldDamage + sharpness.bonus + attackValue;
         double criticalRoll = ThreadLocalRandom.current().nextDouble(100.0D);
         boolean critical = criticalChance > 0.0D && criticalRoll < criticalChance;
         double damage = critical
@@ -58,8 +63,35 @@ public class AttributeListener implements Listener {
                     + " criticalChance=" + criticalChance + "% criticalRoll=" + criticalRoll
                     + " critical=" + critical
                     + " multiplier=" + NewCustomCuiLianPro.builtinCriticalMultiplier
-                    + " damage=" + oldDamage + " + " + attackValue + " -> " + damage);
+                    + " sharpnessLevel=" + sharpness.level
+                    + " sharpnessBonus=" + sharpness.bonus
+                    + " damage=" + oldDamage + " + " + sharpness.bonus
+                    + " + " + attackValue + " -> " + damage);
         }
+    }
+
+    private static SharpnessCompensation getModSharpnessCompensation(
+            EntityDamageByEntityEvent event, LivingEntity attacker) {
+        if (!NewCustomCuiLianPro.builtinModSharpnessCompatibility
+                || event.getCause() != DamageCause.ENTITY_ATTACK
+                || !(event.getDamager() instanceof LivingEntity)) {
+            return SharpnessCompensation.NONE;
+        }
+        EntityEquipment equipment = attacker.getEquipment();
+        ItemStack handItem = equipment == null ? null : equipment.getItemInHand();
+        if (handItem == null || handItem.getType() == Material.AIR) {
+            return SharpnessCompensation.NONE;
+        }
+        NewCustomCuiLianPro.ItemType itemType = CuiLianAPI.getItemType(handItem);
+        if (itemType == null || !itemType.numericId || !"Hand".equalsIgnoreCase(itemType.typeInBag)) {
+            return SharpnessCompensation.NONE;
+        }
+        int level = handItem.getEnchantmentLevel(Enchantment.DAMAGE_ALL);
+        if (level <= 0) {
+            return SharpnessCompensation.NONE;
+        }
+        return new SharpnessCompensation(level,
+                level * NewCustomCuiLianPro.builtinSharpnessDamagePerLevel);
     }
 
     private static double clampChance(double chance) {
@@ -134,5 +166,17 @@ public class AttributeListener implements Listener {
             return ((Player) entity).getName();
         }
         return entity.getType().name();
+    }
+
+    private static final class SharpnessCompensation {
+
+        private static final SharpnessCompensation NONE = new SharpnessCompensation(0, 0.0D);
+        private final int level;
+        private final double bonus;
+
+        private SharpnessCompensation(int level, double bonus) {
+            this.level = level;
+            this.bonus = bonus;
+        }
     }
 }

@@ -6,6 +6,12 @@ debug: false
 # 暴击倍率。2.0 表示暴击时，原版/Mod 武器伤害与物理伤害词条之和乘以 2。
 critical:
   multiplier: 2.0
+# 部分 Mod 武器使用固定伤害流程，Uranium 不会把锋利伤害加入事件。
+# 此兼容仅补偿 items.yml 中 Hand 分类下的数字 ID，不会重复计算原版武器。
+sharpness:
+  mod-compatibility: true
+  # Minecraft 1.7.10 锋利每级增加 1.25 点伤害。
+  damage-per-level: 1.25
 # keyword 为 lore 中数值前的完整文本。颜色代码会被自动忽略。
 # 支持整数和小数，例如 "物理伤害: 10"、"物理伤害: 10.5"。
 # CRITICAL_CHANCE 的数值按百分比计算，例如 "暴击概率: 15" 表示 15%。

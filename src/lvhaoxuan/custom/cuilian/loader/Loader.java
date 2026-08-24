@@ -110,6 +110,8 @@ public class Loader {
         NewCustomCuiLianPro.builtinAttributeEnable = false;
         NewCustomCuiLianPro.builtinAttributeDebug = false;
         NewCustomCuiLianPro.builtinCriticalMultiplier = 2.0D;
+        NewCustomCuiLianPro.builtinModSharpnessCompatibility = true;
+        NewCustomCuiLianPro.builtinSharpnessDamagePerLevel = 1.25D;
         if (!NewCustomCuiLianPro.ins.getDataFolder().exists()) {
             NewCustomCuiLianPro.ins.getDataFolder().mkdir();
         }
@@ -129,8 +131,23 @@ public class Loader {
                 criticalMultiplier = 2.0D;
             }
             NewCustomCuiLianPro.builtinCriticalMultiplier = criticalMultiplier;
+            NewCustomCuiLianPro.builtinModSharpnessCompatibility =
+                    config.getBoolean("sharpness.mod-compatibility", true);
+            double sharpnessDamagePerLevel = config.getDouble("sharpness.damage-per-level", 1.25D);
+            if (Double.isNaN(sharpnessDamagePerLevel) || Double.isInfinite(sharpnessDamagePerLevel)
+                    || sharpnessDamagePerLevel < 0.0D) {
+                NewCustomCuiLianPro.ins.getLogger().warning(
+                        "attribute.yml 的 sharpness.damage-per-level 无效，已使用 1.7.10 默认值 1.25");
+                sharpnessDamagePerLevel = 1.25D;
+            }
+            NewCustomCuiLianPro.builtinSharpnessDamagePerLevel = sharpnessDamagePerLevel;
             if (NewCustomCuiLianPro.builtinAttributeEnable) {
                 NewCustomCuiLianPro.ins.getServer().getConsoleSender().sendMessage("§7[§e" + NewCustomCuiLianPro.ins.getName() + "§7]§a内置属性模块已加载");
+                if (NewCustomCuiLianPro.builtinAttributeDebug) {
+                    NewCustomCuiLianPro.ins.getLogger().info("[AttrDebug] sharpness modCompatibility="
+                            + NewCustomCuiLianPro.builtinModSharpnessCompatibility
+                            + " damagePerLevel=" + NewCustomCuiLianPro.builtinSharpnessDamagePerLevel);
+                }
                 org.bukkit.configuration.ConfigurationSection cs = config.getConfigurationSection("attributes");
                 if (cs != null) {
                     for (String key : cs.getKeys(false)) {
