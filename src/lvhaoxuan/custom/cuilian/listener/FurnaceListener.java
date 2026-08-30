@@ -1,5 +1,8 @@
 package lvhaoxuan.custom.cuilian.listener;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -37,6 +40,7 @@ public class FurnaceListener implements Listener {
     private final Map<Location, ModFurnaceProcess> trackedModFurnaces = new HashMap<>();
     private final Map<Location, VanillaFurnaceProcess> trackedFurnaces = new HashMap<>();
     private final Set<Location> missingProcessWarnings = new HashSet<>();
+    private final FurnaceNmsBridge furnaceNmsBridge = new FurnaceNmsBridge();
 
     public FurnaceListener() {
         // Forge 1.7.10 does not consistently re-check dynamic furnace recipes after a
@@ -51,7 +55,8 @@ public class FurnaceListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void PlayerInteractEvent(PlayerInteractEvent e) {
-        if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK) && e.hasBlock() && e.getClickedBlock().getType().equals(Material.FURNACE)) {
+        if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK) && e.hasBlock()
+                && isFurnaceMaterial(e.getClickedBlock().getType())) {
             Player p = e.getPlayer();
             Furnace furnace = (Furnace) e.getClickedBlock().getState();
             rememberFurnaceOwner(furnace, p.getName());
@@ -263,6 +268,9 @@ public class FurnaceListener implements Listener {
             Furnace furnace = (Furnace) entry.getKey().getBlock().getState();
             ItemStack smelt = furnace.getInventory().getSmelting();
             if (!isConfiguredModItem(smelt)) {
+                if (entry.getValue().started) {
+                    stopModFurnaceBurning(furnace);
+                }
                 iterator.remove();
                 continue;
             }
@@ -286,9 +294,21 @@ public class FurnaceListener implements Listener {
             }
 
             process.cookTicks++;
-            furnace.setBurnTime(MOD_SMELT_TICKS);
             if (process.cookTicks < MOD_SMELT_TICKS) {
-                furnace.setCookTime((short) process.cookTicks);
+                int remainingBurnTicks = Math.max(2, MOD_SMELT_TICKS - process.cookTicks);
+                boolean realBurnState = furnaceNmsBridge.apply(furnace, true,
+                        remainingBurnTicks, process.cookTicks);
+                if (!realBurnState) {
+                    // Keep the old progress behaviour as a compatibility fallback. The
+                    // bridge logs its first failure with enough details for diagnosis.
+                    furnace.setBurnTime((short) remainingBurnTicks);
+                    furnace.setCookTime((short) process.cookTicks);
+                }
+                if (!process.burnStateLogged) {
+                    process.burnStateLogged = true;
+                    logFurnaceStage("BURN_STATE", furnace, process.owner, smelt, fuel,
+                            currentResult, "realBurnState=" + realBurnState);
+                }
                 continue;
             }
 
@@ -321,6 +341,7 @@ public class FurnaceListener implements Listener {
             }
             furnace.setCookTime((short) 0);
             furnace.setBurnTime((short) 0);
+            stopModFurnaceBurning(furnace);
             logFurnaceStage("COMMIT", furnace, process.owner,
                     furnace.getInventory().getSmelting(), furnace.getInventory().getFuel(),
                     furnace.getInventory().getResult(), "stone=" + stone.id);
@@ -342,6 +363,15 @@ public class FurnaceListener implements Listener {
         process.reset();
         furnace.setCookTime((short) 0);
         furnace.setBurnTime((short) 0);
+        stopModFurnaceBurning(furnace);
+    }
+
+    private void stopModFurnaceBurning(Furnace furnace) {
+        furnaceNmsBridge.apply(furnace, false, 0, 0);
+    }
+
+    private static boolean isFurnaceMaterial(Material material) {
+        return material == Material.FURNACE || material == Material.BURNING_FURNACE;
     }
 
     private void scheduleCommitVerification(final Location location, final String owner,
@@ -403,6 +433,7 @@ public class FurnaceListener implements Listener {
         private ItemStack source;
         private String stoneId;
         private boolean started;
+        private boolean burnStateLogged;
 
         private ModFurnaceProcess(String owner) {
             this.owner = owner == null ? "" : owner;
@@ -418,6 +449,7 @@ public class FurnaceListener implements Listener {
             stoneId = stone.id;
             cookTicks = 0;
             started = true;
+            burnStateLogged = false;
         }
 
         private void reset() {
@@ -425,6 +457,137 @@ public class FurnaceListener implements Listener {
             stoneId = null;
             cookTicks = 0;
             started = false;
+            burnStateLogged = false;
+        }
+    }
+
+    /**
+     * Updates only the live 1.7.10 furnace TileEntity counters and the vanilla
+     * burning/unlit block state. It deliberately never calls CraftFurnace#update:
+     * forcing a block-state snapshot update on Uranium can overwrite the live
+     * inventory and was the cause of the old missing-output/stone-loss bug.
+     */
+    private static final class FurnaceNmsBridge {
+
+        private static final String[] BURN_TIME_FIELDS = {
+                "furnaceBurnTime", "field_145956_a"
+        };
+        private static final String[] CURRENT_BURN_TIME_FIELDS = {
+                "currentItemBurnTime", "field_145963_i"
+        };
+        private static final String[] COOK_TIME_FIELDS = {
+                "furnaceCookTime", "field_145961_j"
+        };
+
+        private Method getWorldHandleMethod;
+        private Method updateFurnaceStateMethod;
+        private Field inventoryHandleField;
+        private Field burnTimeField;
+        private Field currentBurnTimeField;
+        private Field cookTimeField;
+        private boolean failed;
+        private boolean failureLogged;
+
+        private boolean apply(Furnace furnace, boolean burning, int burnTicks, int cookTicks) {
+            if (furnace == null || failed) {
+                return false;
+            }
+            try {
+                Location location = furnace.getLocation();
+                Object nmsWorld = getNmsWorld(location);
+                ensureBlockStateMethod(nmsWorld);
+
+                Material currentType = location.getBlock().getType();
+                Material expectedType = burning ? Material.BURNING_FURNACE : Material.FURNACE;
+                if (currentType != expectedType) {
+                    updateFurnaceStateMethod.invoke(null, burning, nmsWorld,
+                            location.getBlockX(), location.getBlockY(), location.getBlockZ());
+                }
+
+                Object tileEntity = getLiveTileEntity(location);
+                ensureTileFields(tileEntity);
+                burnTimeField.setInt(tileEntity, Math.max(0, burnTicks));
+                currentBurnTimeField.setInt(tileEntity, burning ? MOD_SMELT_TICKS : 0);
+                cookTimeField.setInt(tileEntity, Math.max(0, cookTicks));
+                return true;
+            } catch (Throwable throwable) {
+                failed = true;
+                if (!failureLogged) {
+                    failureLogged = true;
+                    NewCustomCuiLianPro.ins.getLogger().warning(
+                            "[CuiLianFurnaceDebug] 无法写入 Uranium 实时熔炉燃烧状态，已回退到 Bukkit 计时: "
+                                    + throwable.getClass().getName() + ": " + throwable.getMessage());
+                }
+                return false;
+            }
+        }
+
+        private Object getNmsWorld(Location location) throws Exception {
+            Object craftWorld = location.getWorld();
+            if (getWorldHandleMethod == null) {
+                getWorldHandleMethod = craftWorld.getClass().getMethod("getHandle");
+                getWorldHandleMethod.setAccessible(true);
+            }
+            return getWorldHandleMethod.invoke(craftWorld);
+        }
+
+        private void ensureBlockStateMethod(Object nmsWorld) throws Exception {
+            if (updateFurnaceStateMethod != null) {
+                return;
+            }
+            Class<?> blockFurnaceClass = Class.forName("net.minecraft.block.BlockFurnace");
+            for (Method method : blockFurnaceClass.getDeclaredMethods()) {
+                Class<?>[] parameters = method.getParameterTypes();
+                if (Modifier.isStatic(method.getModifiers()) && parameters.length == 5
+                        && parameters[0] == boolean.class
+                        && parameters[1].isAssignableFrom(nmsWorld.getClass())
+                        && parameters[2] == int.class && parameters[3] == int.class
+                        && parameters[4] == int.class) {
+                    method.setAccessible(true);
+                    updateFurnaceStateMethod = method;
+                    return;
+                }
+            }
+            throw new NoSuchMethodException("BlockFurnace.updateFurnaceBlockState");
+        }
+
+        private Object getLiveTileEntity(Location location) throws Exception {
+            Furnace liveFurnace = (Furnace) location.getBlock().getState();
+            Object craftInventory = liveFurnace.getInventory();
+            if (inventoryHandleField == null
+                    || !inventoryHandleField.getDeclaringClass().isAssignableFrom(craftInventory.getClass())) {
+                inventoryHandleField = findField(craftInventory.getClass(), "inventory");
+            }
+            Object tileEntity = inventoryHandleField.get(craftInventory);
+            if (tileEntity == null || !tileEntity.getClass().getName().endsWith("TileEntityFurnace")) {
+                throw new IllegalStateException("live TileEntityFurnace not found");
+            }
+            return tileEntity;
+        }
+
+        private void ensureTileFields(Object tileEntity) throws Exception {
+            if (burnTimeField == null || !burnTimeField.getDeclaringClass().isAssignableFrom(tileEntity.getClass())) {
+                burnTimeField = findField(tileEntity.getClass(), BURN_TIME_FIELDS);
+                currentBurnTimeField = findField(tileEntity.getClass(), CURRENT_BURN_TIME_FIELDS);
+                cookTimeField = findField(tileEntity.getClass(), COOK_TIME_FIELDS);
+            }
+        }
+
+        private static Field findField(Class<?> type, String... names) throws NoSuchFieldException {
+            Class<?> current = type;
+            while (current != null) {
+                for (String name : names) {
+                    try {
+                        Field field = current.getDeclaredField(name);
+                        field.setAccessible(true);
+                        return field;
+                    } catch (NoSuchFieldException ignored) {
+                        // Try the mapped/SRG name and then the superclass.
+                    }
+                }
+                current = current.getSuperclass();
+            }
+            throw new NoSuchFieldException(type.getName() + " " + java.util.Arrays.toString(names));
         }
     }
 
