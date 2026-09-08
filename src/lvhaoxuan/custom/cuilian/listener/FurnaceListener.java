@@ -37,6 +37,7 @@ import org.bukkit.inventory.Inventory;
 public class FurnaceListener implements Listener {
 
     private static final short MOD_SMELT_TICKS = 200;
+    public static final String REFINING_METADATA = "NewCustomCuiLianPro:refining";
     private final Map<Location, ModFurnaceProcess> trackedModFurnaces = new HashMap<>();
     private final Map<Location, VanillaFurnaceProcess> trackedFurnaces = new HashMap<>();
     private final Set<Location> missingProcessWarnings = new HashSet<>();
@@ -48,6 +49,7 @@ public class FurnaceListener implements Listener {
         Bukkit.getScheduler().runTaskTimer(NewCustomCuiLianPro.ins, new Runnable() {
             @Override
             public void run() {
+                tickNativeProcesses();
                 tickTrackedModFurnaces();
             }
         }, 1L, 1L);
@@ -64,7 +66,7 @@ public class FurnaceListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void FurnaceBurnEvent(FurnaceBurnEvent e) {
         Furnace furnace = (Furnace) e.getBlock().getState();
         ItemStack fuel = e.getFuel();
@@ -79,22 +81,22 @@ public class FurnaceListener implements Listener {
         Stone stone = Stone.byItemStack(fuel);
         Level level = Level.byItemStack(smelt);
         if (CuiLianAPI.canCuiLian(smelt)) {
-            if (stone != null && Level.levels.get((level != null ? level.value : 0) + stone.riseLevel) != null) {
-                furnace.setMetadata("FurnaceFuel", new FixedMetadataValue(NewCustomCuiLianPro.ins, stone));
-                furnace.setMetadata("FurnaceSource", new FixedMetadataValue(NewCustomCuiLianPro.ins, smelt.clone()));
+            if (smelt.getAmount() == 1 && stone != null && Level.levels.get((level != null ? level.value : 0) + stone.riseLevel) != null) {
                 trackedFurnaces.put(furnace.getLocation(),
-                        new VanillaFurnaceProcess(stone, smelt, getFurnaceOwner(furnace)));
+                        new VanillaFurnaceProcess(stone, smelt, fuel, getFurnaceOwner(furnace)));
+                markRefining(furnace);
+                furnace.setCookTime((short) 0);
                 missingProcessWarnings.remove(furnace.getLocation());
                 e.setBurning(true);
                 e.setBurnTime(200);
             } else {
-                trackedFurnaces.remove(furnace.getLocation());
+                endNativeProcess(furnace);
                 e.setCancelled(true);
             }
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void FurnaceSmeltEvent(FurnaceSmeltEvent e) {
         ItemStack smelt = e.getSource();
         Furnace furnace = (Furnace) e.getBlock().getState();
@@ -103,33 +105,103 @@ public class FurnaceListener implements Listener {
             trackModFurnace(furnace, getFurnaceOwner(furnace));
             return;
         }
+        if (!CuiLianAPI.canCuiLian(smelt)) {
+            if (trackedFurnaces.containsKey(furnace.getLocation())) {
+                endNativeProcess(furnace);
+            }
+            return;
+        }
         VanillaFurnaceProcess process = trackedFurnaces.remove(furnace.getLocation());
-        if (process != null && !process.matches(smelt)) {
+        if (process != null && (!process.matches(smelt) || !process.confirmDebit(furnace.getInventory().getFuel()))) {
             process = null;
-            furnace.removeMetadata("FurnaceFuel", NewCustomCuiLianPro.ins);
-            furnace.removeMetadata("FurnaceSource", NewCustomCuiLianPro.ins);
         }
-        Stone stone = process != null ? process.stone : getStoredStone(furnace);
-        if (stone == null) {
-            stone = Stone.byItemStack(furnace.getInventory().getFuel());
-        }
-        if (stone != null) {
-            Player p = resolveFurnacePlayer(furnace, process != null ? process.owner : getFurnaceOwner(furnace));
-            smelt.setAmount(1);
-            smelt = CuiLianAPI.cuilian(stone, smelt, p);
-            e.setResult(smelt);
-            missingProcessWarnings.remove(furnace.getLocation());
-            furnace.removeMetadata("FurnaceFuel", NewCustomCuiLianPro.ins);
-            furnace.removeMetadata("FurnaceSource", NewCustomCuiLianPro.ins);
+        // 记录在结算前移除；燃料槽里有宝石不等于本次已经支付。
+        if (process != null && CuiLianAPI.canCuiLian(smelt)) {
+            try {
+                Player p = resolveFurnacePlayer(furnace, process.owner);
+                ItemStack result = CuiLianAPI.cuilian(process.stone, smelt.clone(), p);
+                e.setResult(result);
+                missingProcessWarnings.remove(furnace.getLocation());
+                logFurnaceStage("NATIVE_COMMIT", furnace, process.owner, smelt,
+                        furnace.getInventory().getFuel(), result, "debitConfirmed=true,creditConsumed=true");
+            } catch (RuntimeException ex) {
+                e.setCancelled(true);
+                throw ex;
+            } finally {
+                endNativeProcess(furnace);
+            }
         } else if (CuiLianAPI.canCuiLian(smelt)) {
             // Never silently turn a lost process into an unchanged output item. Keep the
             // input in place so the player can retry with a new stone.
             e.setCancelled(true);
-            furnace.setCookTime((short) 0);
-            furnace.setBurnTime((short) 0);
-            furnace.removeMetadata("FurnaceFuel", NewCustomCuiLianPro.ins);
-            furnace.removeMetadata("FurnaceSource", NewCustomCuiLianPro.ins);
+            endNativeProcess(furnace);
             notifyMissingProcess(furnace);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void observeBurn(FurnaceBurnEvent e) {
+        if ((e.isCancelled() || !e.isBurning() || e.getBurnTime() <= 0)
+                && trackedFurnaces.containsKey(e.getBlock().getLocation())) {
+            endNativeProcess((Furnace) e.getBlock().getState());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void observeSmelt(FurnaceSmeltEvent e) {
+        if (e.isCancelled() && trackedFurnaces.containsKey(e.getBlock().getLocation())) {
+            endNativeProcess((Furnace) e.getBlock().getState());
+        }
+    }
+
+    private void markRefining(Furnace furnace) {
+        furnace.setMetadata(REFINING_METADATA, new FixedMetadataValue(NewCustomCuiLianPro.ins, true));
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onDisable(org.bukkit.event.server.PluginDisableEvent event) {
+        if (event.getPlugin() != NewCustomCuiLianPro.ins) {
+            return;
+        }
+        Set<Location> locations = new HashSet<Location>(trackedFurnaces.keySet());
+        locations.addAll(trackedModFurnaces.keySet());
+        for (Location location : locations) {
+            if (location.getWorld().isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4)
+                    && location.getBlock().getState() instanceof Furnace) {
+                stopModFurnaceBurning((Furnace) location.getBlock().getState());
+            }
+        }
+        trackedFurnaces.clear();
+        trackedModFurnaces.clear();
+    }
+
+    private void endNativeProcess(Furnace furnace) {
+        trackedFurnaces.remove(furnace.getLocation());
+        furnace.removeMetadata("FurnaceFuel", NewCustomCuiLianPro.ins);
+        furnace.removeMetadata("FurnaceSource", NewCustomCuiLianPro.ins);
+        stopModFurnaceBurning(furnace);
+    }
+
+    private void tickNativeProcesses() {
+        for (Location location : new java.util.ArrayList<Location>(trackedFurnaces.keySet())) {
+            if (!location.getWorld().isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4)) {
+                continue;
+            }
+            if (!(location.getBlock().getState() instanceof Furnace)) {
+                trackedFurnaces.remove(location);
+                location.getBlock().removeMetadata(REFINING_METADATA, NewCustomCuiLianPro.ins);
+                continue;
+            }
+            Furnace furnace = (Furnace) location.getBlock().getState();
+            VanillaFurnaceProcess process = trackedFurnaces.get(location);
+            if (!process.matches(furnace.getInventory().getSmelting())
+                    || !process.confirmDebit(furnace.getInventory().getFuel())
+                    || !isEmpty(furnace.getInventory().getResult()) || ++process.age > 1200) {
+                logFurnaceStage("NATIVE_CANCEL", furnace, process.owner,
+                        furnace.getInventory().getSmelting(), furnace.getInventory().getFuel(),
+                        furnace.getInventory().getResult(), "invalidInputOrDebitOrTimeout=true");
+                endNativeProcess(furnace);
+            }
         }
     }
 
@@ -213,24 +285,6 @@ public class FurnaceListener implements Listener {
         }
     }
 
-    private Stone getStoredStone(Furnace furnace) {
-        if (!furnace.hasMetadata("FurnaceFuel") || furnace.getMetadata("FurnaceFuel").isEmpty()) {
-            return null;
-        }
-        Object value = furnace.getMetadata("FurnaceFuel").get(0).value();
-        if (!(value instanceof Stone)) {
-            return null;
-        }
-        if (furnace.hasMetadata("FurnaceSource") && !furnace.getMetadata("FurnaceSource").isEmpty()) {
-            Object source = furnace.getMetadata("FurnaceSource").get(0).value();
-            ItemStack current = furnace.getInventory().getSmelting();
-            if (source instanceof ItemStack && (current == null || !((ItemStack) source).isSimilar(current))) {
-                return null;
-            }
-        }
-        return (Stone) value;
-    }
-
     private Player resolveFurnacePlayer(Furnace furnace, String owner) {
         Player player = owner == null || owner.isEmpty() ? null : Bukkit.getPlayer(owner);
         if (player != null) {
@@ -261,7 +315,11 @@ public class FurnaceListener implements Listener {
     private void tickTrackedModFurnaces() {
         for (java.util.Iterator<Map.Entry<Location, ModFurnaceProcess>> iterator = trackedModFurnaces.entrySet().iterator(); iterator.hasNext();) {
             Map.Entry<Location, ModFurnaceProcess> entry = iterator.next();
+            if (!entry.getKey().getWorld().isChunkLoaded(entry.getKey().getBlockX() >> 4, entry.getKey().getBlockZ() >> 4)) {
+                continue;
+            }
             if (!(entry.getKey().getBlock().getState() instanceof Furnace)) {
+                entry.getKey().getBlock().removeMetadata(REFINING_METADATA, NewCustomCuiLianPro.ins);
                 iterator.remove();
                 continue;
             }
@@ -279,9 +337,9 @@ public class FurnaceListener implements Listener {
             Stone stone = Stone.byItemStack(fuel);
             Level level = Level.byItemStack(smelt);
             ItemStack currentResult = furnace.getInventory().getResult();
-            if (stone == null || Level.levels.get((level != null ? level.value : 0) + stone.riseLevel) == null
+            if (smelt.getAmount() != 1 || stone == null || Level.levels.get((level != null ? level.value : 0) + stone.riseLevel) == null
                     || !isEmpty(currentResult)) {
-                resetModProcess(furnace, entry.getValue(), stone == null ? "invalidStone"
+                resetModProcess(furnace, entry.getValue(), smelt.getAmount() != 1 ? "stackedInput" : stone == null ? "invalidStone"
                         : (!isEmpty(currentResult) ? "outputOccupied" : "targetLevelMissing"));
                 continue;
             }
@@ -289,6 +347,7 @@ public class FurnaceListener implements Listener {
             ModFurnaceProcess process = entry.getValue();
             if (!process.matches(smelt, stone)) {
                 process.capture(smelt, stone);
+                markRefining(furnace);
                 logFurnaceStage("START", furnace, process.owner, smelt, fuel, currentResult,
                         "stone=" + stone.id + ",level=" + (level == null ? 0 : level.value));
             }
@@ -367,7 +426,10 @@ public class FurnaceListener implements Listener {
     }
 
     private void stopModFurnaceBurning(Furnace furnace) {
+        furnace.setCookTime((short) 0);
+        furnace.setBurnTime((short) 0);
         furnaceNmsBridge.apply(furnace, false, 0, 0);
+        furnace.removeMetadata(REFINING_METADATA, NewCustomCuiLianPro.ins);
     }
 
     private static boolean isFurnaceMaterial(Material material) {
@@ -496,6 +558,9 @@ public class FurnaceListener implements Listener {
                 Location location = furnace.getLocation();
                 Object nmsWorld = getNmsWorld(location);
                 ensureBlockStateMethod(nmsWorld);
+                // 在任何方块变更前确认所有反射字段可用。
+                Object tileEntity = getLiveTileEntity(location);
+                ensureTileFields(tileEntity);
 
                 Material currentType = location.getBlock().getType();
                 Material expectedType = burning ? Material.BURNING_FURNACE : Material.FURNACE;
@@ -504,8 +569,6 @@ public class FurnaceListener implements Listener {
                             location.getBlockX(), location.getBlockY(), location.getBlockZ());
                 }
 
-                Object tileEntity = getLiveTileEntity(location);
-                ensureTileFields(tileEntity);
                 burnTimeField.setInt(tileEntity, Math.max(0, burnTicks));
                 currentBurnTimeField.setInt(tileEntity, burning ? MOD_SMELT_TICKS : 0);
                 cookTimeField.setInt(tileEntity, Math.max(0, cookTicks));
@@ -595,16 +658,29 @@ public class FurnaceListener implements Listener {
 
         private final Stone stone;
         private final ItemStack source;
+        private final ItemStack fuelBefore;
+        private boolean debitConfirmed;
+        private int age;
         private String owner;
 
-        private VanillaFurnaceProcess(Stone stone, ItemStack source, String owner) {
+        private VanillaFurnaceProcess(Stone stone, ItemStack source, ItemStack fuel, String owner) {
             this.stone = stone;
             this.source = source.clone();
+            this.fuelBefore = fuel.clone();
             this.owner = owner == null ? "" : owner;
         }
 
         private boolean matches(ItemStack item) {
-            return item != null && source.isSimilar(item);
+            return item != null && item.getAmount() == 1 && source.isSimilar(item);
+        }
+
+        private boolean confirmDebit(ItemStack liveFuel) {
+            if (!debitConfirmed) {
+                debitConfirmed = fuelBefore.getAmount() == 1 ? isEmpty(liveFuel)
+                        : !isEmpty(liveFuel) && fuelBefore.isSimilar(liveFuel)
+                        && liveFuel.getAmount() == fuelBefore.getAmount() - 1;
+            }
+            return debitConfirmed;
         }
     }
 }
