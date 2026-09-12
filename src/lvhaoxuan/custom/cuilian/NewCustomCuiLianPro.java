@@ -32,6 +32,10 @@ public class NewCustomCuiLianPro extends JavaPlugin {
     public static HashMap<Material, String> typesInBag = new HashMap<>();
     public static List<ItemType> types = new ArrayList<>();
     public static boolean otherEntitySuitEffect;
+    public static boolean refinementDebug = false;
+    public static int maxRefineLevel = 18;
+    public static int nightVisionDurationTicks = 1200;
+    public static int nightVisionRefreshTicks = 400;
     public static boolean judgeOffHand;
     public static int displayNameFormat;
     public static List<String> replaceLore;

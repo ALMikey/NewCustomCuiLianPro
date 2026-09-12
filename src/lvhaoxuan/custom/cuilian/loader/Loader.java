@@ -93,6 +93,14 @@ public class Loader {
             InputStreamReader reader = new InputStreamReader(new FileInputStream(file), "UTF-8");
             YamlConfiguration config = YamlConfiguration.loadConfiguration(reader);
             NewCustomCuiLianPro.otherEntitySuitEffect = config.getBoolean("OtherEntitySuitEffect");
+            NewCustomCuiLianPro.refinementDebug = config.getBoolean("RefinementDebug", false);
+            NewCustomCuiLianPro.maxRefineLevel = Math.max(1, config.getInt("MaxRefineLevel", 18));
+            // 夜视提前续期，避免进入客户端临近到期的闪烁阶段。
+            NewCustomCuiLianPro.nightVisionRefreshTicks = Math.max(300,
+                    Math.min(72000, config.getInt("SuitPotion.NightVisionRefreshTicks", 400)));
+            NewCustomCuiLianPro.nightVisionDurationTicks = Math.max(
+                    NewCustomCuiLianPro.nightVisionRefreshTicks + 40,
+                    Math.min(72040, config.getInt("SuitPotion.NightVisionDurationTicks", 1200)));
             NewCustomCuiLianPro.PROTECT_RUNE_JUDGE = getNonEmptyString(config, "PROTECT_RUNE_JUDGE", "§a§l保护符: ");
             NewCustomCuiLianPro.LEVEL_JUDGE = getNonEmptyString(config, "LEVEL_JUDGE", "§e§l淬炼属性: ");
             String starPrefix = config.getString("LEVEL_STAR_DISPLAY_PREFIX");

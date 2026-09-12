@@ -53,6 +53,7 @@ public class FurnaceRegression {
         }
     }
     static FurnaceListener fresh(int stones) {
+        lvhaoxuan.custom.cuilian.object.Stone.upgradeAllowed = true;
         metadata.clear(); scheduled.clear(); CuiLianAPI.calls = 0; CuiLianAPI.mod = false; CuiLianAPI.unchanged = false;
         input = new Stack(Material.DIAMOND_SWORD, 1); fuel = new Stack(Material.COAL, stones); output = null; burn = cook = 0;
         return new FurnaceListener();
@@ -134,6 +135,17 @@ public class FurnaceRegression {
         FurnaceListener stacked=fresh(3); CuiLianAPI.mod=true; input.setAmount(2);
         stacked.FurnaceBurnEvent(new FurnaceBurnEvent(block,fuel,200)); for(int i=0;i<205;i++) tick(stacked);
         check(CuiLianAPI.calls==0 && input.getAmount()==2 && fuel.getAmount()==3,"stacked mod input lost");
+        // 上限、直升同级或缺少概率统一在燃烧前拒绝，原版/Mod 均不扣费。
+        for (boolean modItem : new boolean[]{false,true}) {
+            FurnaceListener blocked = fresh(3); CuiLianAPI.mod = modItem;
+            lvhaoxuan.custom.cuilian.object.Stone.upgradeAllowed = false;
+            FurnaceBurnEvent blockedBurn = new FurnaceBurnEvent(block,fuel,200);
+            blocked.FurnaceBurnEvent(blockedBurn);
+            check(blockedBurn.isCancelled(),"invalid upgrade consumed native fuel");
+            for (int i=0;i<205;i++) tick(blocked);
+            check(CuiLianAPI.calls==0 && fuel.getAmount()==3 && input!=null && output==null,
+                    "invalid upgrade consumed fuel/input or produced output");
+        }
         // 真实加速方法：倍率 2/3/20 对淬炼无效，普通配方最多推进到 199。
         Field uf=sun.misc.Unsafe.class.getDeclaredField("theUnsafe"); uf.setAccessible(true);
         sun.misc.Unsafe unsafe=(sun.misc.Unsafe)uf.get(null);

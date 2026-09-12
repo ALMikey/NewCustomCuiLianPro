@@ -81,7 +81,7 @@ public class FurnaceListener implements Listener {
         Stone stone = Stone.byItemStack(fuel);
         Level level = Level.byItemStack(smelt);
         if (CuiLianAPI.canCuiLian(smelt)) {
-            if (smelt.getAmount() == 1 && stone != null && Level.levels.get((level != null ? level.value : 0) + stone.riseLevel) != null) {
+            if (smelt.getAmount() == 1 && stone != null && stone.canUpgrade(level != null ? level.value : 0)) {
                 trackedFurnaces.put(furnace.getLocation(),
                         new VanillaFurnaceProcess(stone, smelt, fuel, getFurnaceOwner(furnace)));
                 markRefining(furnace);
@@ -337,7 +337,7 @@ public class FurnaceListener implements Listener {
             Stone stone = Stone.byItemStack(fuel);
             Level level = Level.byItemStack(smelt);
             ItemStack currentResult = furnace.getInventory().getResult();
-            if (smelt.getAmount() != 1 || stone == null || Level.levels.get((level != null ? level.value : 0) + stone.riseLevel) == null
+            if (smelt.getAmount() != 1 || stone == null || !stone.canUpgrade(level != null ? level.value : 0)
                     || !isEmpty(currentResult)) {
                 resetModProcess(furnace, entry.getValue(), smelt.getAmount() != 1 ? "stackedInput" : stone == null ? "invalidStone"
                         : (!isEmpty(currentResult) ? "outputOccupied" : "targetLevelMissing"));
@@ -463,6 +463,9 @@ public class FurnaceListener implements Listener {
 
     private void logFurnaceStage(String stage, Furnace furnace, String owner,
             ItemStack input, ItemStack fuel, ItemStack output, String detail) {
+        if (!NewCustomCuiLianPro.refinementDebug && !"COMMIT_FAILED".equals(stage)) {
+            return;
+        }
         NewCustomCuiLianPro.ins.getLogger().info("[CuiLianFurnaceDebug] stage=" + stage
                 + " player=" + (owner == null || owner.isEmpty() ? "<unknown>" : owner)
                 + " location=" + describeLocation(furnace.getLocation())

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import lvhaoxuan.custom.cuilian.NewCustomCuiLianPro;
 import lvhaoxuan.llib.api.LLibAPI;
 import lvhaoxuan.llib.loader.LoaderUtil;
 import lvhaoxuan.llib.nbt.BaseNBT;
@@ -22,6 +23,44 @@ public class Stone {
     public String id;
     public LevelDrop dropLevel;
     public int riseLevel;
+    public int targetLevel;
+    public int bonusRiseLevel;
+    public double bonusRiseChance;
+
+    // 成功率按普通目标星级读取，额外升星不改变基础成功率。
+    public Level getChanceLevel(int currentLevel) {
+        long target = targetLevel > 0 ? targetLevel : (long) currentLevel + riseLevel;
+        return target > Integer.MAX_VALUE ? null : Level.levels.get((int) target);
+    }
+
+    public boolean canUpgrade(int currentLevel) {
+        Level target = getChanceLevel(currentLevel);
+        if (currentLevel < 0 || target == null || target.value <= currentLevel
+                || target.value > NewCustomCuiLianPro.maxRefineLevel
+                || target.lore == null || target.lore.isEmpty()) {
+            return false;
+        }
+        Double rate = chance.get(target);
+        if (rate == null || Double.isNaN(rate) || Double.isInfinite(rate) || rate < 0 || rate > 100) {
+            return false;
+        }
+        if (targetLevel == 0 && bonusRiseLevel > 0 && bonusRiseChance > 0) {
+            int bonusTarget = (int) Math.min(NewCustomCuiLianPro.maxRefineLevel,
+                    (long) target.value + bonusRiseLevel);
+            Level bonus = Level.levels.get(bonusTarget);
+            return bonus != null && bonus.lore != null && !bonus.lore.isEmpty();
+        }
+        return true;
+    }
+
+    public Level getSuccessLevel(int currentLevel) {
+        Level target = getChanceLevel(currentLevel);
+        if (targetLevel == 0 && bonusRiseLevel > 0 && rnd.nextDouble() * 100 < bonusRiseChance) {
+            return Level.levels.get((int) Math.min(NewCustomCuiLianPro.maxRefineLevel,
+                    (long) target.value + bonusRiseLevel));
+        }
+        return target;
+    }
 
     public Stone(ItemStack item, String id, LevelDrop dropLevel, int riseLevel, Map<Level, Double> chance) {
         this.item = item;
@@ -68,11 +107,20 @@ public class Stone {
         if (item != null && glow) {
             item = addGlow(item);
         }
-        return new Stone(item,
+        Stone stone = new Stone(item,
                 path,
                 new LevelDrop(config.getString(path + ".dropLevel")),
                 config.getInt(path + ".riseLevel"),
                 map);
+        stone.targetLevel = config.getInt(path + ".targetLevel", 0);
+        stone.bonusRiseLevel = config.getInt(path + ".bonusRiseLevel", 0);
+        stone.bonusRiseChance = config.getDouble(path + ".bonusRiseChance", 0);
+        if (stone.targetLevel < 0 || (stone.targetLevel == 0 && stone.riseLevel <= 0)
+                || stone.bonusRiseLevel < 0 || !Double.isFinite(stone.bonusRiseChance)
+                || stone.bonusRiseChance < 0 || stone.bonusRiseChance > 100) {
+            throw new IllegalArgumentException("淬炼石 " + path + " 的升星配置无效");
+        }
+        return stone;
     }
 
     private static ItemStack addGlow(ItemStack item) {

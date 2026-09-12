@@ -63,9 +63,9 @@ public class CuiLianAPI {
         }
 
         int basicLevel = basicLevelObj != null ? basicLevelObj.value : 0;
-        Level successLevel = Level.levels.get(basicLevel + stone.riseLevel);
+        Level successLevel = stone.getChanceLevel(basicLevel);
         Double successChance = successLevel == null ? null : stone.chance.get(successLevel);
-        if (successLevel == null || successChance == null || successLevel.lore == null || successLevel.lore.isEmpty()) {
+        if (!stone.canUpgrade(basicLevel)) {
             rejectRefinement(p, Message.CUILIAN_CONFIG_ERROR,
                     "缺少目标等级或成功率配置 (from=" + basicLevel + ", rise=" + stone.riseLevel + ")", stone, item);
             return item;
@@ -73,8 +73,9 @@ public class CuiLianAPI {
 
         ItemStack result = item.clone();
         String sendMessage;
-        double probability = LLibAPI.getRandom(0, 100);
-        if (probability <= successChance.doubleValue()) {
+        double probability = Stone.rnd.nextDouble() * 100.0D;
+        if (probability < successChance.doubleValue()) {
+            successLevel = stone.getSuccessLevel(basicLevel);
             result = setItemLevel(result, successLevel);
             sendMessage = Message.SUCCESS.replace("%s", successLevel.lore.get(0));
             logSettlement(p, stone, item, result, basicLevel, successLevel.value,
@@ -144,6 +145,9 @@ public class CuiLianAPI {
     private static void logSettlement(Player player, Stone stone, ItemStack before, ItemStack after,
             int fromLevel, int toLevel, double roll, double chance, String outcome,
             int requestedDrop, int actualDrop) {
+        if (!NewCustomCuiLianPro.refinementDebug) {
+            return;
+        }
         String dropDetails = requestedDrop < 0 ? ""
                 : " requestedDrop=" + requestedDrop + " actualDrop=" + actualDrop;
         NewCustomCuiLianPro.ins.getLogger().info("[CuiLianDebug] result=" + outcome

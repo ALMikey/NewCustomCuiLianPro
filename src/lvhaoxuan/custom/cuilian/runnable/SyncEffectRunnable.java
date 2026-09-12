@@ -103,17 +103,20 @@ public class SyncEffectRunnable implements Runnable {
         String[] args = potionStr.trim().split("\\s+");
         PotionEffectType type = PotionEffectType.getByName(args[0]);
         int amplifier = Integer.parseInt(args[1]);
+        boolean nightVision = PotionEffectType.NIGHT_VISION.equals(type);
+        int duration = nightVision ? NewCustomCuiLianPro.nightVisionDurationTicks : SUIT_POTION_DURATION_TICKS;
+        int threshold = nightVision ? NewCustomCuiLianPro.nightVisionRefreshTicks : SUIT_POTION_REFRESH_THRESHOLD_TICKS;
         PotionEffect active = findActivePotionEffect(entity, type);
         if (active != null) {
             if (active.getAmplifier() > amplifier) {
                 return;
             }
             if (active.getAmplifier() == amplifier
-                    && active.getDuration() > SUIT_POTION_REFRESH_THRESHOLD_TICKS) {
+                    && active.getDuration() > threshold) {
                 return;
             }
         }
-        entity.addPotionEffect(new PotionEffect(type, SUIT_POTION_DURATION_TICKS, amplifier), true);
+        entity.addPotionEffect(new PotionEffect(type, duration, amplifier), true);
     }
 
     private static PotionEffect findActivePotionEffect(LivingEntity entity, PotionEffectType type) {
