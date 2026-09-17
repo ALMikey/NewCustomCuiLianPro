@@ -71,6 +71,7 @@ public class NewCustomCuiLianPro extends JavaPlugin {
         this.getServer().getPluginManager().registerEvents(new FurnaceListener(), this);
         this.getServer().getPluginManager().registerEvents(new ProtectRuneListener(), this);
         this.getServer().getPluginManager().registerEvents(new AttributeListener(), this);
+        this.getServer().getPluginManager().registerEvents(new lvhaoxuan.custom.cuilian.movelevel.MoveLevelHandle(), this);
         setRecipe();
         Bukkit.getScheduler().runTask(this, new Runnable() {
             @Override
@@ -90,6 +91,7 @@ public class NewCustomCuiLianPro extends JavaPlugin {
         Loader.loadLevels();
         Loader.loadStones();
         Loader.loadAttributes();
+        lvhaoxuan.custom.cuilian.movelevel.MoveLevelHandle.load();
     }
 
     public static String createLevelMarker(int level) {

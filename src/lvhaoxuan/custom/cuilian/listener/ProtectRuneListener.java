@@ -20,11 +20,12 @@ public class ProtectRuneListener implements Listener {
     public static HashMap<String, ItemMeta> userMap = new HashMap<>();
     public static HashMap<String, ProtectRune> protectRuneMap = new HashMap<>();
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void InventoryClickEvent(InventoryClickEvent e) {
         Player p = (Player) e.getWhoClicked();
         if (e.getRawSlot() >= 0 && e.isRightClick() && (e.getInventory().getType() != InventoryType.CRAFTING || e.getInventory().getType() != InventoryType.PLAYER)) {
             ItemStack item = e.getCurrentItem();
+            if (item == null) return;
             ItemMeta meta = item.getItemMeta();
             if (userMap.containsKey(p.getName())) {
                 if (e.getInventory().getType() != InventoryType.PLAYER && e.getInventory().getType() != InventoryType.CRAFTING) {

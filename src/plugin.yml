@@ -1,8 +1,12 @@
 name: NewCustomCuiLianPro
 main: lvhaoxuan.custom.cuilian.NewCustomCuiLianPro
-version: 4.4.31
+version: 4.4.32
 author: lvhaoxuan
 depend: [LLib]
-softdepend: [AttributePlus, SX-Attribute, ProtocolLib]
+softdepend: [AttributePlus, SX-Attribute, ProtocolLib, PlayerPoints, baoshi]
 commands:
     cuilian:
+permissions:
+    cuilian.movelevel:
+        description: 使用付费淬炼移星界面
+        default: true

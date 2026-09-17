@@ -1,0 +1,42 @@
+# /cuilian moveLevel 打开。原装备不放入界面，左键背包选择A、B，再点确认。
+enabled: true
+# 每次成功移星扣除PlayerPoints点券；0为免费。缺少PlayerPoints时收费移星不可用。
+cost: 100
+# 默认同分类：武器->武器、头盔->头盔等；关闭后仍检查宝石是否允许镶嵌到目标。
+same-category: true
+# 固定覆盖模式：B原星级、保护符、宝石全部替换为A的内容，A移除转出的内容。
+# 普通附魔、绑定、耐久和其他NBT留在各自装备上；耐久精魄绑定到B当前耐久。
+ui:
+  title: '&6&l淬炼移星'
+  rows: 3
+  # 槽位从0开始，自左向右、自上而下。三个功能槽不得重复。
+  source:
+    slot: 11
+    material: ANVIL
+    data: 0
+    name: '&e选择装备A（来源）'
+    lore:
+      - '&7点击这里，再左键背包中的来源装备'
+      - '&c成功后A失去星级、保护符和宝石'
+  target:
+    slot: 15
+    material: ANVIL
+    data: 0
+    name: '&e选择装备B（目标）'
+    lore:
+      - '&7点击这里，再左键背包中的目标装备'
+      - '&cB原星级、保护符、宝石将被覆盖删除'
+  confirm:
+    slot: 22
+    material: EMERALD
+    data: 0
+    name: '&a确认覆盖移星（%cost%点券）'
+    lore:
+      - '&e费用：%cost%点券'
+      - '&c覆盖B已有的星级、保护符和宝石，不叠加、不返还！'
+      - '&7绑定和普通附魔仍保留在原装备上'
+      - '&7确认后才扣费；关闭界面不扣费'
+  background:
+    material: STAINED_GLASS_PANE
+    data: 7
+    name: ' '
